@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EdWisely · Waveform Generator Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#080c10;--bg1:#0d1117;--bg2:#13191f;--bg3:#1a2229;
+  --line:#1f2d38;--line2:#2a3d4a;
+  --accent:#00e5ff;--accent-dim:#007a8c;--accent-wash:rgba(0,229,255,.08);
+  --green:#00ffa3;--green-wash:rgba(0,255,163,.08);
+  --amber:#ffb347;--amber-wash:rgba(255,179,71,.10);
+  --ink:#cce8f0;--ink-soft:#6b8fa0;--ink-dim:#3d5566;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg0)}
+body{
+  font-family:'DM Sans',sans-serif;
+  color:var(--ink);
+  background-image:radial-gradient(circle at 20% 20%, rgba(0,229,255,.03) 0%, transparent 60%),
+                   radial-gradient(circle at 80% 80%, rgba(0,255,163,.02) 0%, transparent 60%);
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:58px;
+  background:var(--bg1);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:10;
+}
+.brand{
+  font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:14px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+}
+.brand span{color:var(--ink-soft);font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-tag{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--ink-dim);letter-spacing:.18em;text-transform:uppercase;
+}
+.back-link{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase;
+  text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .15s;
+}
+.back-link:hover{color:var(--accent)}
+
+/* ── HERO ── */
+.hero{
+  max-width:780px;margin:0 auto;padding:60px 32px 48px;
+}
+.hero-eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:.25em;text-transform:uppercase;
+  color:var(--accent-dim);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.hero-eyebrow::before{
+  content:'';width:20px;height:1px;background:var(--accent-dim);
+}
+.hero-title{
+  font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:800;
+  line-height:1.1;color:var(--ink);margin-bottom:12px;
+}
+.hero-title em{color:var(--accent);font-style:normal}
+.hero-sub{
+  font-size:16px;color:var(--ink-soft);line-height:1.65;
+  max-width:560px;
+}
+
+/* ── DIVIDER ── */
+.divider{
+  max-width:780px;margin:0 auto 32px;padding:0 32px;
+  display:flex;align-items:center;gap:16px;
+}
+.divider-line{flex:1;height:1px;background:var(--line)}
+.divider-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:var(--ink-dim);letter-spacing:.22em;text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* ── PROBLEM GRID ── */
+.grid{
+  max-width:780px;margin:0 auto;padding:0 32px 80px;
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;
+}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+
+/* ── PROBLEM CARD ── */
+.card{
+  background:var(--bg2);
+  border:1.5px solid var(--line2);
+  border-radius:var(--radius);
+  padding:26px 24px 22px;
+  cursor:pointer;
+  text-decoration:none;
+  color:inherit;
+  display:block;
+  position:relative;
+  overflow:hidden;
+  transition:border-color .2s, box-shadow .2s, transform .18s;
+}
+.card::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg, var(--accent-wash), transparent 60%);
+  opacity:0;transition:opacity .25s;
+  pointer-events:none;
+}
+.card:hover{
+  border-color:var(--accent-dim);
+  transform:translateY(-3px);
+  box-shadow:0 16px 48px rgba(0,0,0,.4), 0 0 0 1px rgba(0,229,255,.12);
+}
+.card:hover::after{opacity:1}
+
+.card-top{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:18px;
+}
+.card-num{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.22em;color:var(--accent);text-transform:uppercase;
+  font-weight:700;
+}
+.card-diff{
+  padding:3px 9px;border-radius:10px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.diff-beginner{
+  background:var(--green-wash);color:var(--green);
+  border:1px solid rgba(0,255,163,.25);
+}
+.diff-intermediate{
+  background:var(--amber-wash);color:var(--amber);
+  border:1px solid rgba(255,179,71,.25);
+}
+
+.card-title{
+  font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;
+  color:var(--ink);line-height:1.25;margin-bottom:10px;
+}
+.card-desc{
+  font-size:14px;color:var(--ink-soft);line-height:1.6;margin-bottom:20px;
+}
+
+.card-pills{
+  display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px;
+}
+.pill{
+  background:var(--bg3);border:1px solid var(--line);
+  border-radius:4px;padding:4px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--amber);font-weight:700;
+}
+.pill span{color:var(--ink-dim);font-weight:400;margin-right:3px}
+
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:16px;border-top:1px solid var(--line);
+}
+.card-footer-label{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--ink-dim);letter-spacing:.12em;text-transform:uppercase;
+}
+.card-arrow{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--accent-wash);border:1px solid var(--accent-dim);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent);
+  transition:background .2s, color .2s, transform .18s;
+}
+.card:hover .card-arrow{
+  background:var(--accent);color:var(--bg0);
+  transform:translateX(3px);
+}
+
+/* ── THEORY BUTTON ── */
+.theory-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-wash);
+  border:1px solid var(--accent-dim);border-radius:4px;
+  padding:5px 10px;cursor:pointer;transition:all .15s;
+  text-decoration:none;position:relative;z-index:2;
+  flex-shrink:0;
+}
+.theory-btn:hover{background:var(--accent);color:var(--bg0);border-color:var(--accent)}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(4,8,14,.82);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+
+/* ── MODAL BOX ── */
+.modal{
+  background:var(--bg1);
+  border:1px solid var(--line2);
+  border-radius:10px;
+  width:100%;max-width:620px;
+  max-height:88vh;
+  display:flex;flex-direction:column;
+  transform:translateY(20px);
+  transition:transform .28s cubic-bezier(.34,1.3,.64,1);
+  box-shadow:0 32px 80px rgba(0,0,0,.6);
+}
+.modal-overlay.open .modal{transform:translateY(0)}
+
+.modal-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:22px 24px 18px;
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+  gap:12px;
+}
+.modal-header-left{display:flex;flex-direction:column;gap:5px}
+.modal-eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--accent);
+}
+.modal-title{
+  font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;
+  color:var(--ink);line-height:1.2;
+}
+.modal-close{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:var(--bg3);border:1px solid var(--line2);
+  color:var(--ink-soft);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:14px;line-height:1;
+}
+.modal-close:hover{background:var(--accent);color:var(--bg0);border-color:var(--accent)}
+
+.modal-body{
+  overflow-y:auto;padding:22px 24px 28px;
+  display:flex;flex-direction:column;gap:18px;
+}
+
+/* modal sections */
+.m-section{}
+.m-section-title{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:10px;
+}
+.m-text{font-size:14px;color:var(--ink-soft);line-height:1.7}
+.m-text strong{color:var(--ink)}
+.m-text em{color:var(--accent);font-style:normal}
+
+/* waveform SVG diagram */
+.m-diagram{
+  background:var(--bg3);border:1px solid var(--line2);border-radius:6px;
+  padding:16px;display:flex;justify-content:center;
+}
+
+/* formula rows */
+.m-formulas{display:flex;flex-direction:column;gap:8px}
+.m-formula{
+  background:var(--bg3);border:1px solid var(--line2);border-radius:5px;
+  padding:11px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;
+}
+.m-formula-expr{
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  font-weight:700;color:var(--accent);
+}
+.m-formula-note{font-size:12px;color:var(--ink-dim);text-align:right;flex-shrink:0}
+
+/* steps list */
+.m-steps{display:flex;flex-direction:column;gap:8px}
+.m-step{display:flex;gap:12px;align-items:flex-start}
+.m-step-n{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  background:var(--accent-wash);border:1px solid var(--accent-dim);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--accent);font-weight:700;
+  margin-top:1px;
+}
+.m-step-text{font-size:14px;color:var(--ink-soft);line-height:1.6}
+.m-step-text strong{color:var(--ink)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent-dim)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">EdWisely <span>/ Virtual Lab</span></div>
+  <div class="topbar-right">
+    <div class="topbar-tag">Analog Electronics — Op-Amp Waveform Generators</div>
+    <a class="back-link" href="../simulator_main_claude.html">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      All Problems
+    </a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">Select an experiment</div>
+  <h1 class="hero-title">Design Waveform Generators to Obtain<br><em>Triangular and Sawtooth Signal</em></h1>
+  <p class="hero-sub">
+    Choose a problem below. You'll read the full problem statement,
+    complete a pre-lab calculation worksheet, then build and verify
+    the circuit in the interactive simulator.
+  </p>
+</div>
+
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-label">2 experiments available</div>
+  <div class="divider-line"></div>
+</div>
+
+<div class="grid">
+
+  <a class="card" href="p1.html">
+    <div class="card-top">
+      <div class="card-num">Lab 05-A</div>
+      <div class="card-diff diff-beginner">Beginner</div>
+    </div>
+    <div class="card-title">Triangular Wave Generator</div>
+    <p class="card-desc">
+      Design a triangular waveform generator using a Schmitt trigger
+      comparator and op-amp integrator. Calculate R for a target
+      frequency and predict the peak output amplitude.
+    </p>
+    <div class="card-pills">
+      <div class="pill"><span>f</span>1 kHz</div>
+      <div class="pill"><span>C</span>10 nF</div>
+      <div class="pill"><span>Supply</span>±12 V</div>
+      <div class="pill"><span>Find</span>R &amp; V_peak</div>
+    </div>
+    <div class="card-footer">
+      <div class="card-footer-label">3 steps · ~20 min</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="theory-btn" onclick="event.preventDefault();event.stopPropagation();openModal('tri')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Theory
+        </button>
+        <div class="card-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+  </a>
+
+  <a class="card" href="p2.html">
+    <div class="card-top">
+      <div class="card-num">Lab 05-B</div>
+      <div class="card-diff diff-intermediate">Intermediate</div>
+    </div>
+    <div class="card-title">Sawtooth Wave Generator</div>
+    <p class="card-desc">
+      Design a sawtooth generator using an RC charging network and
+      comparator reset circuit. Determine R for the required period,
+      compute τ = RC, and assess ramp linearity.
+    </p>
+    <div class="card-pills">
+      <div class="pill"><span>f</span>500 Hz</div>
+      <div class="pill"><span>V_p</span>8 V</div>
+      <div class="pill"><span>V_cc</span>+15 V</div>
+      <div class="pill"><span>Find</span>R &amp; τ</div>
+    </div>
+    <div class="card-footer">
+      <div class="card-footer-label">3 steps · ~25 min</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="theory-btn" onclick="event.preventDefault();event.stopPropagation();openModal('saw')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Theory
+        </button>
+        <div class="card-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+  </a>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: TRIANGULAR WAVE GENERATOR
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-tri" onclick="handleOverlayClick(event,'modal-tri')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-eyebrow">Lab 05-A · Theory Reference</div>
+        <div class="modal-title">Triangular Wave Generator</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-tri')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="m-section">
+        <div class="m-section-title">How It Works</div>
+        <p class="m-text">
+          A triangular wave generator is built by cascading two op-amp stages.
+          The first stage is a <strong>Schmitt trigger</strong> (comparator with hysteresis) — it switches
+          its output between <em>+V_sat</em> and <em>−V_sat</em> based on the voltage at its non-inverting input.
+          The second stage is an <strong>integrator</strong> — it integrates the square wave from the comparator,
+          converting it into a linearly rising and falling triangular ramp.
+        </p>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Output Waveform</div>
+        <div class="m-diagram">
+          <svg viewBox="0 0 380 100" width="340" height="90" xmlns="http://www.w3.org/2000/svg">
+            <!-- grid lines -->
+            <line x1="0" y1="50" x2="380" y2="50" stroke="#1f2d38" stroke-width="1"/>
+            <line x1="0" y1="10" x2="380" y2="10" stroke="#1f2d38" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <line x1="0" y1="90" x2="380" y2="90" stroke="#1f2d38" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <!-- triangular wave -->
+            <polyline points="0,50 48,10 96,90 144,10 192,90 240,10 288,90 336,10 380,50"
+              stroke="#00e5ff" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- labels -->
+            <text x="4" y="8" font-family="JetBrains Mono,monospace" font-size="9" fill="#6b8fa0">+V_peak</text>
+            <text x="4" y="97" font-family="JetBrains Mono,monospace" font-size="9" fill="#6b8fa0">−V_peak</text>
+            <text x="4" y="48" font-family="JetBrains Mono,monospace" font-size="9" fill="#3d5566">0 V</text>
+            <!-- period arrow -->
+            <line x1="48" y1="78" x2="144" y2="78" stroke="#2a3d4a" stroke-width="1"/>
+            <line x1="48" y1="74" x2="48" y2="82" stroke="#2a3d4a" stroke-width="1"/>
+            <line x1="144" y1="74" x2="144" y2="82" stroke="#2a3d4a" stroke-width="1"/>
+            <text x="80" y="88" font-family="JetBrains Mono,monospace" font-size="8" fill="#3d5566">T = 1/f</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Circuit Block Diagram</div>
+        <p class="m-text">
+          <strong>Stage 1 — Schmitt Trigger:</strong> The comparator output switches between ±V_sat.
+          With equal feedback resistors R₁ = R₂, the threshold voltage is ±V_sat/2.<br><br>
+          <strong>Stage 2 — Integrator:</strong> The square wave is applied to the inverting integrator
+          (resistor R, capacitor C). The constant input voltage causes the capacitor to charge/discharge
+          linearly, producing the triangular ramp at the output.
+          The integrator output feeds back to the Schmitt trigger's non-inverting input, closing the loop.
+        </p>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Key Equations</div>
+        <div class="m-formulas">
+          <div class="m-formula">
+            <div class="m-formula-expr">f = 1 / (4 · R · C)</div>
+            <div class="m-formula-note">Output frequency (R₁ = R₂)</div>
+          </div>
+          <div class="m-formula">
+            <div class="m-formula-expr">V_peak = V_sat · (R₁/R₂)</div>
+            <div class="m-formula-note">Peak amplitude of triangular wave</div>
+          </div>
+          <div class="m-formula">
+            <div class="m-formula-expr">V_sat ≈ ±11 V</div>
+            <div class="m-formula-note">μA741 at ±12 V supply</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Design Steps</div>
+        <div class="m-steps">
+          <div class="m-step"><div class="m-step-n">1</div><div class="m-step-text">Choose C (e.g. 10 nF) and target frequency f.</div></div>
+          <div class="m-step"><div class="m-step-n">2</div><div class="m-step-text">Solve <strong>R = 1 / (4·f·C)</strong> for the integrator resistor.</div></div>
+          <div class="m-step"><div class="m-step-n">3</div><div class="m-step-text">Set <strong>R₁ = R₂</strong> so V_peak = V_sat ≈ 11 V.</div></div>
+          <div class="m-step"><div class="m-step-n">4</div><div class="m-step-text">Verify V_peak &lt; V_cc rails — no clipping should occur.</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL: SAWTOOTH WAVE GENERATOR
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-saw" onclick="handleOverlayClick(event,'modal-saw')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-eyebrow">Lab 05-B · Theory Reference</div>
+        <div class="modal-title">Sawtooth Wave Generator</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-saw')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="m-section">
+        <div class="m-section-title">How It Works</div>
+        <p class="m-text">
+          A sawtooth generator uses an <strong>RC charging network</strong> to produce a linearly
+          rising ramp voltage. A capacitor charges through resistor R from the supply V_cc.
+          A <strong>comparator</strong> monitors the capacitor voltage and, when it reaches the
+          reference threshold V_p, rapidly discharges the capacitor back to zero via a
+          <em>reset switch</em> — creating the characteristic fast-fall, slow-rise sawtooth shape.
+        </p>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Output Waveform</div>
+        <div class="m-diagram">
+          <svg viewBox="0 0 380 100" width="340" height="90" xmlns="http://www.w3.org/2000/svg">
+            <!-- grid -->
+            <line x1="0" y1="90" x2="380" y2="90" stroke="#1f2d38" stroke-width="1"/>
+            <line x1="0" y1="10" x2="380" y2="10" stroke="#1f2d38" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <!-- sawtooth: slow rise then fast fall, 3 cycles -->
+            <polyline points="0,90 88,10 90,90 178,10 180,90 268,10 270,90 358,10 360,90 380,90"
+              stroke="#00ffa3" stroke-width="2" fill="none" stroke-linejoin="round"/>
+            <!-- labels -->
+            <text x="4" y="8"  font-family="JetBrains Mono,monospace" font-size="9" fill="#6b8fa0">V_peak</text>
+            <text x="4" y="97" font-family="JetBrains Mono,monospace" font-size="9" fill="#6b8fa0">0 V</text>
+            <!-- period arrow -->
+            <line x1="90" y1="60" x2="180" y2="60" stroke="#2a3d4a" stroke-width="1"/>
+            <line x1="90"  y1="56" x2="90"  y2="64" stroke="#2a3d4a" stroke-width="1"/>
+            <line x1="180" y1="56" x2="180" y2="64" stroke="#2a3d4a" stroke-width="1"/>
+            <text x="112" y="56" font-family="JetBrains Mono,monospace" font-size="8" fill="#3d5566">T = 1/f</text>
+            <!-- ramp label -->
+            <text x="20" y="55" font-family="JetBrains Mono,monospace" font-size="8" fill="#3d5566" transform="rotate(-24,20,55)">linear ramp</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Circuit Operation</div>
+        <p class="m-text">
+          <strong>Charging phase:</strong> The capacitor C charges exponentially through R from V_cc.
+          When V_p &lt;&lt; V_cc, the initial portion of the exponential is approximately linear,
+          producing a good ramp. The larger the ratio τ/T (where τ = RC), the more linear the ramp.<br><br>
+          <strong>Reset phase:</strong> When the capacitor voltage reaches V_p, the comparator output
+          switches and triggers a discharge path, rapidly pulling the capacitor back to 0 V.
+          The cycle then repeats.
+        </p>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Key Equations</div>
+        <div class="m-formulas">
+          <div class="m-formula">
+            <div class="m-formula-expr">T ≈ R·C·V_p / V_cc</div>
+            <div class="m-formula-note">Period (linear approximation)</div>
+          </div>
+          <div class="m-formula">
+            <div class="m-formula-expr">R = T·V_cc / (C·V_p)</div>
+            <div class="m-formula-note">Design equation for R</div>
+          </div>
+          <div class="m-formula">
+            <div class="m-formula-expr">τ = R·C  &gt;&gt;  T</div>
+            <div class="m-formula-note">Linearity condition</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="m-section">
+        <div class="m-section-title">Design Steps</div>
+        <div class="m-steps">
+          <div class="m-step"><div class="m-step-n">1</div><div class="m-step-text">Choose C (e.g. 100 nF), supply V_cc, peak V_p, and target f.</div></div>
+          <div class="m-step"><div class="m-step-n">2</div><div class="m-step-text">Compute period <strong>T = 1/f</strong>, then solve <strong>R = T·V_cc / (C·V_p)</strong>.</div></div>
+          <div class="m-step"><div class="m-step-n">3</div><div class="m-step-text">Calculate <strong>τ = RC</strong> and verify τ is several times larger than T for a linear ramp.</div></div>
+          <div class="m-step"><div class="m-step-n">4</div><div class="m-step-text">Ensure V_p &lt; V_cc so the comparator can reliably detect the threshold.</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(type) {
+  document.getElementById('modal-' + type).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleOverlayClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['modal-tri','modal-saw'].forEach(id => {
+      document.getElementById(id).classList.remove('open');
+    });
+    document.body.style.overflow = '';
+  }
+});
+</script>
+
+</body>
+</html>
