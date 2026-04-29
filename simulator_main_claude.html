@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Simulator Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #03080d;
+    --bg2:      #060f18;
+    --panel:    #0d1e2e;
+    --panel2:   #112536;
+    --border:   #1e3d5c;
+    --border2:  #2a5470;
+    --accent:   #00d4ff;
+    --accent2:  #00ff9d;
+    --accent3:  #ff6b35;
+    --warn:     #ffd166;
+    --muted:    #2a5070;
+    --text:     #bdd8ed;
+    --text-dim: #7aafc8;
+    --glow-c:   rgba(0,212,255,0.35);
+    --glow-g:   rgba(0,255,157,0.35);
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── DOT GRID BG ── */
+  body::before {
+    content:'';
+    position:fixed; inset:0; z-index:0;
+    background-image: radial-gradient(circle, rgba(0,212,255,0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events:none;
+  }
+
+  /* ── LAYOUT SHELL ── */
+  #app {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ════════════════════════════════
+     HEADER
+  ════════════════════════════════ */
+  #header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 64px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,212,255,0.04) 0%, transparent 100%);
+    position: relative;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    box-shadow: 0 0 12px var(--glow-c), inset 0 0 12px rgba(0,212,255,0.05);
+  }
+
+  .logo-mark svg { width: 22px; height: 22px; }
+
+  .logo-text-wrap { display: flex; flex-direction: column; }
+
+  .logo-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-shadow: 0 0 20px var(--glow-c);
+    line-height: 1;
+  }
+
+  .logo-tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    margin-top: 2px;
+  }
+
+  /* breadcrumb */
+  #breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .bc-item {
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .bc-item.link {
+    color: var(--accent);
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+
+  .bc-item.link:hover { opacity: 0.65; }
+  .bc-sep { opacity: 0.3; font-size: 9px; }
+
+  /* header right */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .hstat { text-align: right; }
+  .hstat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    display: block;
+  }
+  .hstat-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    color: var(--accent2);
+    text-shadow: 0 0 10px var(--glow-g);
+  }
+
+  /* ════════════════════════════════
+     MAIN CONTENT AREA
+  ════════════════════════════════ */
+  #content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ════════════════════════════════
+     PAGE: LANDING (Subjects)
+  ════════════════════════════════ */
+  #page-landing {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    padding: 28px 60px;
+    transition: transform 0.5s cubic-bezier(.77,0,.18,1), opacity 0.4s;
+  }
+
+  #page-landing.hide-left {
+    transform: translateX(-60px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .landing-hero {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .hero-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 4px;
+    opacity: .7;
+    white-space: nowrap;
+  }
+
+  .hero-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+
+  .hero-h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: .5px;
+    white-space: nowrap;
+    opacity: 0;
+    animation: fadeUp .4s .1s forwards;
+  }
+
+  .hero-h1 em { color: var(--accent); font-style: normal; }
+
+  .hero-p {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    opacity: 0;
+    animation: fadeUp .4s .2s forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0);     }
+  }
+
+  /* Subject Cards */
+  .subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 20px;
+  }
+
+  .subject-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 30px 28px 24px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .25s, transform .2s, box-shadow .25s;
+    opacity: 0;
+    animation: fadeUp .45s forwards;
+  }
+
+  .subject-card:nth-child(1){ animation-delay:.42s }
+  .subject-card:nth-child(2){ animation-delay:.52s }
+  .subject-card:nth-child(3){ animation-delay:.62s }
+  .subject-card:nth-child(4){ animation-delay:.72s }
+
+  /* accent top bar */
+  .subject-card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent 0%, var(--c) 50%, transparent 100%);
+    opacity: 0;
+    transition: opacity .25s;
+  }
+
+  .subject-card:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px var(--c) inset;
+  }
+
+  .subject-card:hover::before { opacity: 1; }
+
+  .sc-index {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    color: var(--c);
+    margin-bottom: 14px;
+    opacity: 1;
+  }
+
+  .sc-icon { font-size: 34px; display:block; margin-bottom:12px; }
+
+  .sc-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #e8f4ff;
+    letter-spacing: 0;
+    margin-bottom: 8px;
+  }
+
+  .sc-desc {
+    font-size: 13px;
+    color: #8ab8d0;
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+
+  .sc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sc-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--c);
+    border: 1px solid var(--c);
+    padding: 3px 10px;
+    border-radius: 2px;
+    opacity: .75;
+    letter-spacing: 1px;
+  }
+
+  .sc-arrow {
+    color: var(--c);
+    font-size: 18px;
+    opacity: .6;
+    transition: transform .2s, opacity .2s;
+  }
+
+  .subject-card:hover .sc-arrow {
+    transform: translateX(6px);
+    opacity: 1;
+  }
+
+  /* ════════════════════════════════
+     SLIDE-IN EXPERIMENT PANEL
+  ════════════════════════════════ */
+  #panel-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(3,8,13,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .35s;
+  }
+
+  #panel-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  #exp-panel {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: min(480px, 92vw);
+    background: var(--bg2);
+    border-left: 1px solid var(--border2);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .4s cubic-bezier(.77,0,.18,1);
+    box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+  }
+
+  #exp-panel.open {
+    transform: translateX(0);
+  }
+
+  .panel-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .panel-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    opacity: .75;
+    transition: opacity .2s;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .panel-back:hover { opacity: 1; }
+  .panel-back svg { width:14px; height:14px; flex-shrink:0; }
+
+  .panel-subject-icon { font-size: 28px; margin-bottom: 6px; display:block; }
+
+  .panel-subject-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--panel-color, var(--accent));
+    margin-bottom: 4px;
+  }
+
+  .panel-subject-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0;
+  }
+
+  /* Experiment list */
+  .exp-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  .exp-list-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    /* color: var(--text-dim); */
+    color: 8ab8d0;
+    color: 
+    padding: 0 8px;
+    margin-bottom: 12px;
+  }
+
+  .exp-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 16px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background .2s, border-color .2s, transform .15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .exp-item::before {
+    content:'';
+    position:absolute; left:0; top:0; bottom:0; width:2px;
+    background: var(--panel-color, var(--accent));
+    opacity: 0;
+    transition: opacity .2s;
+  }
+
+  .exp-item:hover {
+    background: rgba(255,255,255,0.03);
+    border-color: var(--border2);
+    transform: translateX(4px);
+  }
+
+  .exp-item:hover::before { opacity: 1; }
+
+  .exp-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--panel-color, var(--accent));
+    opacity: .5;
+    min-width: 32px;
+  }
+
+  .exp-info { flex: 1; min-width: 0; }
+
+  .exp-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e8f4ff;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .exp-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .exp-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 1px;
+    letter-spacing: 1px;
+  }
+
+  .exp-arrow {
+    color: var(--panel-color, var(--accent));
+    font-size: 16px;
+    opacity: .4;
+    transition: opacity .2s, transform .2s;
+    flex-shrink: 0;
+  }
+
+  .exp-item:hover .exp-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  /* ════════════════════════════════
+     PAGE: SIMULATOR
+  ════════════════════════════════ */
+  #page-simulator {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: transform .45s cubic-bezier(.77,0,.18,1), opacity .35s;
+    pointer-events: none;
+  }
+
+  #page-simulator.active {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .sim-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 48px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sim-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid var(--border2);
+    padding: 6px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+
+  .sim-back-btn:hover {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.05);
+  }
+
+  .sim-back-btn svg { width:12px; height:12px; }
+
+  .sim-bar-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 40vw;
+  }
+
+  .sim-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sim-open-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent2);
+    background: rgba(0,255,157,0.05);
+    border: 1px solid var(--accent2);
+    padding: 5px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background .2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .sim-open-btn:hover { background: rgba(0,255,157,0.12); }
+
+  #sim-frame-wrap {
+    flex: 1;
+    position: relative;
+    background: #000;
+  }
+
+  #sim-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* loading overlay */
+  #sim-loading {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 5;
+    transition: opacity .3s;
+  }
+
+  #sim-loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loader-ring {
+    width: 48px; height: 48px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <div id="header">
+    <div class="logo" onclick="goHome()">
+      <div class="logo-mark">
+        <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="4"  cy="11" r="2" fill="#00d4ff"/>
+          <circle cx="18" cy="11" r="2" fill="#00d4ff"/>
+          <circle cx="11" cy="4"  r="2" fill="#00ff9d"/>
+          <circle cx="11" cy="18" r="2" fill="#00ff9d"/>
+          <line x1="6"  y1="11" x2="9"  y2="11" stroke="#00d4ff" stroke-width="1.2"/>
+          <line x1="13" y1="11" x2="16" y2="11" stroke="#00d4ff" stroke-width="1.2"/>
+          <line x1="11" y1="6"  x2="11" y2="9"  stroke="#00ff9d" stroke-width="1.2"/>
+          <line x1="11" y1="13" x2="11" y2="16" stroke="#00ff9d" stroke-width="1.2"/>
+          <rect x="9" y="9" width="4" height="4" rx="1" fill="rgba(0,212,255,0.15)" stroke="#00d4ff" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="logo-text-wrap">
+        <span class="logo-name">EDLAB </span>
+        <span class="logo-tagline">Lab Simulator v1.0</span>
+      </div>
+    </div>
+
+    <div id="breadcrumb">
+      <span class="bc-item link" onclick="goHome()">HOME</span>
+    </div>
+
+    <div class="header-right">
+      <div class="hstat"><span class="hstat-label">SUBJECTS</span><span class="hstat-val">04</span></div>
+      <div class="hstat"><span class="hstat-label">EXPERIMENTS</span><span class="hstat-val">20</span></div>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div id="content">
+
+    <!-- PAGE: LANDING -->
+    <div id="page-landing">
+      <div class="landing-hero">
+        <div class="hero-left">
+          <div class="hero-eyebrow">// ELECTRONICS LAB</div>
+          <div class="hero-divider"></div>
+          <h1 class="hero-h1">SELECT A <em>SUBJECT</em> TO BEGIN</h1>
+        </div>
+        <p class="hero-p">Choose a subject to browse its experiments. Each opens an interactive simulator.</p>
+      </div>
+
+      <div class="subjects-grid" id="subjectsGrid"></div>
+    </div>
+
+    <!-- OVERLAY for panel -->
+    <div id="panel-overlay" onclick="closePanel()"></div>
+
+    <!-- SLIDE-IN EXPERIMENT PANEL -->
+    <div id="exp-panel">
+      <div class="panel-header">
+        <button class="panel-back" onclick="closePanel()">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          BACK TO SUBJECTS
+        </button>
+        <span class="panel-subject-icon" id="panelIcon"></span>
+        <div class="panel-subject-tag" id="panelTag"></div>
+        <div class="panel-subject-title" id="panelTitle"></div>
+      </div>
+      <div class="exp-list">
+        <div class="exp-list-label">SELECT AN EXPERIMENT</div>
+        <div id="expListItems"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: SIMULATOR -->
+    <div id="page-simulator">
+      <div class="sim-bar">
+        <button class="sim-back-btn" id="simBackBtn" onclick="backFromSim()">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M8 1.5L3 6L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          BACK
+        </button>
+        <span class="sim-bar-title" id="simBarTitle">—</span>
+        <div class="sim-bar-right">
+          <a class="sim-open-btn" id="simOpenLink" href="#" target="_blank">↗ OPEN IN NEW TAB</a>
+        </div>
+      </div>
+      <div id="sim-frame-wrap">
+        <div id="sim-loading">
+          <div class="loader-ring"></div>
+          <div class="loader-text">LOADING SIMULATOR...</div>
+        </div>
+        <iframe id="sim-frame" src="about:blank"></iframe>
+      </div>
+    </div>
+
+  </div><!-- /#content -->
+</div><!-- /#app -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════
+const SUBJECTS = [
+  {
+    id: 'analog',
+    title: 'Analog Electronics',
+    tag: 'SUBJECT 01',
+    icon: '〜',
+    color: '#00d4ff',
+    desc: 'Op-amp circuits, amplifier configurations, signal conditioning, and analog filters.',
+
+
+    // points to folder locaion
+    experiments: [
+      { id: 'ae1', title: 'Design and construct: Inverting Amplifier',         tags: ['OP-AMP','GAIN','VIRTUAL GND'],  file: 'virtual-lab-inverting-amp/index.html' },
+      { id: 'ae4', title: 'Design Waveform generators to obtain triangular and sawtooth signal',      tags: ['OP-AMP','CAPACITOR','SLOPE'],    file: 'virtual-lab-waveform-gen/index.html' },
+      { id: 'ae2', title: 'Design and construct: Non-Inverting Amplifier - Coming Soon',     tags: ['OP-AMP','BUFFER','GAIN'],        file: 'simulators/non-inverting-amp.html' },
+      { id: 'ae3', title: 'Design of Wien Bridge Oscillator for a desired frequency - Coming Soon',           tags: ['OP-AMP','MIXER','ADDER'],        file: 'simulators/summing-amp.html' },
+      
+      
+    ]
+  },
+  {
+    id: 'dc',
+    title: 'Analog and Digital Communication (Coming Soon)',
+    tag: 'SUBJECT 02',
+    icon: '⚡',
+    color: '#00ff9d',
+    desc: 'Voltage dividers, Kirchhoff laws, Thevenin/Norton equivalents, and network analysis.',
+    experiments: [
+      { id: 'dc1', title: 'Series Resistor Network',     tags: ['KVL','OHM\'S LAW'],             file: 'simulators/series-resistors.html' },
+      { id: 'dc2', title: 'Voltage Divider',             tags: ['DIVIDER','RATIO'],               file: 'simulators/voltage-divider.html' },
+      { id: 'dc3', title: 'Thevenin Equivalent',         tags: ['THEVENIN','EQUIVALENT'],         file: 'simulators/thevenin.html' },
+      { id: 'dc4', title: 'Wheatstone Bridge',           tags: ['BRIDGE','NULL DETECTOR'],        file: 'simulators/wheatstone.html' },
+      { id: 'dc5', title: 'Norton\'s Theorem',           tags: ['NORTON','CURRENT SOURCE'],       file: 'simulators/norton.html' },
+    ]
+  },
+  {
+    id: 'semi',
+    title: 'Basic Electronics (Coming Soon)',
+    tag: 'SUBJECT 03',
+    icon: '⊿',
+    color: '#ff6b35',
+    desc: 'Diode characteristics, BJT biasing, rectifiers, clippers, and switching circuits.',
+    experiments: [
+      { id: 's1', title: 'Diode I-V Characteristic',    tags: ['DIODE','FORWARD BIAS','IV'],      file: 'simulators/diode-iv.html' },
+      { id: 's2', title: 'Half-Wave Rectifier',          tags: ['RECTIFIER','RIPPLE','AC-DC'],    file: 'simulators/half-wave-rect.html' },
+      { id: 's3', title: 'Full-Wave Bridge Rectifier',   tags: ['BRIDGE','RECTIFIER','SMOOTH'],   file: 'simulators/full-wave-rect.html' },
+      { id: 's4', title: 'BJT Common Emitter Amp',       tags: ['BJT','CE AMP','GAIN'],           file: 'simulators/bjt-ce-amp.html' },
+      { id: 's5', title: 'BJT Switching Circuit',        tags: ['SWITCH','SATURATION','CUTOFF'],  file: 'simulators/bjt-switch.html' },
+    ]
+  },
+  {
+    id: 'digital',
+    title: 'Digital Electronics (Coming Soon)',
+    tag: 'SUBJECT 04',
+    icon: '▣',
+    color: '#ffd166',
+    desc: 'Logic gates, flip-flops, counters, adders, timing diagrams, and combinational logic.',
+    experiments: [
+      { id: 'd1', title: 'CMOS Inverter VTC',            tags: ['CMOS','LOGIC','VTC'],            file: 'simulators/cmos-inverter.html' },
+      { id: 'd2', title: 'Full Adder (NAND)',            tags: ['NAND','ADDER','CARRY'],          file: 'simulators/full-adder.html' },
+      { id: 'd3', title: 'D Flip-Flop Timing',           tags: ['FLIP-FLOP','SETUP','HOLD'],      file: 'simulators/d-flipflop.html' },
+      { id: 'd4', title: '4-Bit Ripple Counter',         tags: ['COUNTER','RIPPLE','CLOCK'],      file: 'simulators/ripple-counter.html' },
+      { id: 'd5', title: 'Multiplexer (4:1 MUX)',        tags: ['MUX','SELECT','DATA'],           file: 'simulators/mux-4to1.html' },
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let activeSubject = null;   // subject object currently in panel
+let activeSimFile = null;   // file path currently loaded in iframe
+let simReturnToPanel = true; // back from sim goes to panel
+
+// ═══════════════════════════════════════════════════════
+//  BUILD LANDING
+// ═══════════════════════════════════════════════════════
+function buildLanding() {
+  const grid = document.getElementById('subjectsGrid');
+  grid.innerHTML = '';
+  SUBJECTS.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'subject-card';
+    card.style.setProperty('--c', s.color);
+    card.innerHTML = `
+      <div class="sc-index">${s.tag} // ${s.experiments.length} EXPERIMENTS</div>
+      <span class="sc-icon">${s.icon}</span>
+      <div class="sc-title">${s.title.toUpperCase()}</div>
+      <div class="sc-desc">${s.desc}</div>
+      <div class="sc-footer">
+        <span class="sc-badge">${s.experiments.length} LABS</span>
+        <span class="sc-arrow">→</span>
+      </div>
+    `;
+    card.onclick = () => openPanel(s);
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  PANEL
+// ═══════════════════════════════════════════════════════
+function openPanel(subj) {
+  activeSubject = subj;
+
+  // Set panel color variable
+  document.getElementById('exp-panel').style.setProperty('--panel-color', subj.color);
+
+  // Fill header
+  document.getElementById('panelIcon').textContent  = subj.icon;
+  document.getElementById('panelTag').textContent   = subj.tag + ' // EXPERIMENTS';
+  document.getElementById('panelTitle').textContent = subj.title.toUpperCase();
+
+  // Fill experiment list
+  const list = document.getElementById('expListItems');
+  list.innerHTML = '';
+  subj.experiments.forEach((exp, i) => {
+    const item = document.createElement('div');
+    item.className = 'exp-item';
+    item.style.animationDelay = `${i * 0.06}s`;
+    item.innerHTML = `
+      <div class="exp-num">E${String(i+1).padStart(2,'0')}</div>
+      <div class="exp-info">
+        <div class="exp-title">${exp.title}</div>
+        <div class="exp-tags">${exp.tags.map(t=>`<span class="exp-tag">${t}</span>`).join('')}</div>
+      </div>
+      <span class="exp-arrow">→</span>
+    `;
+    item.onclick = () => openSimulator(exp);
+    list.appendChild(item);
+  });
+
+  // Animate in
+  document.getElementById('panel-overlay').classList.add('visible');
+  document.getElementById('exp-panel').classList.add('open');
+
+  updateBreadcrumb([
+    { label:'HOME', action:'goHome()' },
+    { label: subj.title.toUpperCase(), action: null }
+  ]);
+}
+
+function closePanel() {
+  document.getElementById('panel-overlay').classList.remove('visible');
+  document.getElementById('exp-panel').classList.remove('open');
+  updateBreadcrumb([{ label:'HOME', action: null }]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  SIMULATOR
+// ═══════════════════════════════════════════════════════
+function openSimulator(exp) {
+  closePanel();
+
+  activeSimFile = exp.file;
+
+  // Update sim bar
+  document.getElementById('simBarTitle').textContent = exp.title.toUpperCase();
+  document.getElementById('simOpenLink').href = exp.file;
+
+  // Show loading
+  const loading = document.getElementById('sim-loading');
+  loading.classList.remove('hidden');
+
+  // Set iframe src
+  const frame = document.getElementById('sim-frame');
+  frame.src = '';
+  setTimeout(() => {
+    frame.src = exp.file;
+  }, 50);
+
+  frame.onload = () => {
+    loading.classList.add('hidden');
+  };
+
+  // Slide in simulator page
+  document.getElementById('page-simulator').classList.add('active');
+
+  // Update breadcrumb
+  updateBreadcrumb([
+    { label:'HOME', action:'goHome()' },
+    { label: activeSubject ? activeSubject.title.toUpperCase() : 'SUBJECT', action: 'backFromSim()' },
+    { label: exp.title.toUpperCase(), action: null }
+  ]);
+}
+
+function backFromSim() {
+  // Hide simulator
+  document.getElementById('page-simulator').classList.remove('active');
+  document.getElementById('sim-frame').src = '';
+  document.getElementById('sim-loading').classList.remove('hidden');
+
+  // Re-open panel for current subject
+  if (activeSubject) {
+    setTimeout(() => openPanel(activeSubject), 100);
+  } else {
+    goHome();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  HOME
+// ═══════════════════════════════════════════════════════
+function goHome() {
+  closePanel();
+  document.getElementById('page-simulator').classList.remove('active');
+  document.getElementById('sim-frame').src = '';
+  document.getElementById('sim-loading').classList.remove('hidden');
+  document.getElementById('page-landing').classList.remove('hide-left');
+  updateBreadcrumb([{ label:'HOME', action: null }]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  BREADCRUMB
+// ═══════════════════════════════════════════════════════
+function updateBreadcrumb(items) {
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = items.map((item, i) => {
+    const isLast = i === items.length - 1;
+    const sep = i > 0 ? `<span class="bc-sep">▶</span>` : '';
+    if (item.action && !isLast) {
+      return `${sep}<span class="bc-item link" onclick="${item.action}">${item.label}</span>`;
+    }
+    return `${sep}<span class="bc-item">${item.label}</span>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+buildLanding();
+</script>
+</body>
+</html>
