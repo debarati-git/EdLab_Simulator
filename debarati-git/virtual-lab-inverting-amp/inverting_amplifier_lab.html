@@ -1,0 +1,3403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Virtual Inverting Amplifier Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Unica+One&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* CRT green on dark teal/black */
+    --p1:#064a32;   /* deep forest */
+    --p2:#00ffa3;   /* CRT green */
+    --p3:#3d8a6e;   /* dim green */
+    --p4:#4ab6d6;   /* blueprint blue */
+    --p5:#0d6b4a;   /* accent-dim */
+    --p6:#00ffa3;   /* accent */
+    --p7:#33ffbc;   /* accent-bright */
+
+    /* Dark teal/black backgrounds */
+    --bg-0:#0a1014;               /* near-black violet */
+    --bg-1:#0f1a1e;               /* main panel surface */
+    --bg-2:#142127;               /* raised surface */
+    --grid:#1a2b33;               /* subtle grid lines */
+    --line:#2a4550;               /* panel borders */
+    --line-soft:#23384a;          /* softer dividers */
+
+    /* CRT green as primary accent — reads as "live/energized" */
+    --accent:var(--p6);           /* wires, success, primary action */
+    --accent-bright:var(--p7);    /* hover highlight */
+    --accent-deep:var(--p5);      /* pressed / dim */
+    --accent-wash:rgba(0,255,163,0.14);
+
+    --info:var(--p4);             /* info blue, V_in trace */
+    --info-wash:rgba(74,182,214,0.14);
+    --hi:var(--p3);               /* secondary accent */
+    --hi-wash:rgba(13,107,74,0.15);
+    --cy:var(--p7);               /* bright accent */
+
+    /* Warm signals for feedback resistor & output */
+    --amber:#ffb347;              /* warm amber for R_f / V_out trace */
+    --amber-wash:rgba(255,179,71,0.14);
+    --feedback:#ffb347;
+    --feedback-wash:rgba(255,179,71,0.14);
+
+    --danger:#ff4e6b;             /* red for errors */
+    --danger-wash:rgba(255,78,107,0.14);
+
+    --ink:#d8f1e8;                /* near-white text */
+    --ink-dim:#6d8a87;            /* muted grey-green */
+    --ink-soft:#8ab3a8;
+    --copper:#b87333;             /* R_in zigzag — copper brown */
+    --blueprint:var(--p4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Space Grotesk', sans-serif;
+    color:var(--ink);
+    background:var(--bg-0);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px, 28px 28px;
+    height:100vh;
+    overflow:hidden;
+  }
+
+  /* ───── HEADER ───── */
+  header{
+    padding:12px 24px;
+    border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--bg-1);
+    position:relative;
+    flex-shrink:0;
+    height:88px;
+  }
+  header::after{
+    content:"";
+    position:absolute;left:0;right:0;bottom:-1px;height:2px;
+    background:linear-gradient(90deg, transparent 10%, var(--accent) 50%, transparent 90%);
+    opacity:.4;
+  }
+  .brand{display:flex;flex-direction:column;gap:2px}
+  .brand-tag{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.3em;
+    color:var(--accent);text-transform:uppercase;font-weight:700;
+  }
+  h1{
+    font-family:'Unica One',sans-serif;
+    font-size:28px;
+    font-weight:400;letter-spacing:.08em;
+    text-transform:uppercase;
+    line-height:1;
+    color:var(--ink);
+  }
+  h1 .thin{color:var(--ink-soft);font-weight:300}
+  /* ───── HEADER GOVERNING EQUATION ───── */
+  .header-formula{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:10px 20px;
+    background:linear-gradient(135deg, var(--bg-2), var(--bg-1));
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    border-radius:3px;
+    position:relative;
+    overflow:hidden;
+  }
+  .header-formula::before{
+    content:"∴";
+    position:absolute;top:-16px;right:6px;
+    font-size:64px;color:var(--accent);opacity:.12;
+    font-family:serif;pointer-events:none;line-height:1;
+  }
+  .hf-title{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;letter-spacing:.25em;
+    color:var(--accent);
+    text-transform:uppercase;
+    font-weight:700;
+    max-width:70px;
+    line-height:1.3;
+    padding-right:12px;
+    border-right:1px dashed var(--line);
+  }
+  .hf-eq{
+    display:flex;flex-direction:column;gap:3px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:16px;
+    color:var(--ink);
+    line-height:1.2;
+    font-weight:500;
+    position:relative;
+    z-index:1;
+  }
+  .hf-line{
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .hf-op{color:var(--ink-dim);margin:0 1px;font-weight:400}
+  .hf-neg{color:var(--danger);font-weight:700;font-size:20px;line-height:1}
+  .hf-frac{
+    display:inline-flex;flex-direction:column;align-items:center;
+    line-height:1;margin:0 2px;
+  }
+  .hf-num{
+    border-bottom:1.5px solid var(--accent);
+    padding:0 8px 2px;
+    color:var(--amber);
+    font-weight:700;
+  }
+  .hf-den{
+    padding:2px 8px 0;
+    color:var(--copper);
+    font-weight:700;
+  }
+  @keyframes blink{50%{opacity:.35}}
+
+  /* ───── MAIN LAYOUT — fills remaining viewport height ───── */
+  main{
+    display:grid;
+    grid-template-columns: 220px 1fr 0;  /* right panel hidden by default */
+    gap:1px;
+    background:var(--line);
+    height:calc(100vh - 88px);
+    overflow:hidden;
+    transition:grid-template-columns .35s ease;
+  }
+  /* Right panel hidden — clips and hides it */
+  main > aside.right-panel{
+    opacity:0;
+    pointer-events:none;
+    overflow:hidden;
+    transition:opacity .3s ease, transform .3s ease;
+    transform:translateX(20px);
+  }
+  /* scope-visible: right panel slides in after verify */
+  main.scope-visible{
+    grid-template-columns: 220px 1fr 340px;
+  }
+  main.scope-visible > aside.right-panel{
+    opacity:1;
+    pointer-events:auto;
+    transform:translateX(0);
+    overflow-y:auto;
+  }
+  /* Focus mode: hide left tray */
+  main.focus-mode{
+    grid-template-columns: 0 1fr 340px;
+  }
+  /* focus-mode WITHOUT scope (shouldn't happen but defensive) */
+  main.focus-mode:not(.scope-visible){
+    grid-template-columns: 0 1fr 0;
+  }
+  main.focus-mode > aside.panel:first-of-type{
+    opacity:0;
+    pointer-events:none;
+    transform:translateX(-20px);
+    transition:opacity .25s, transform .25s;
+  }
+  main.focus-mode > aside.panel:first-of-type{visibility:hidden}
+  /* "Show components" handle that appears in focus mode for users who want the tray back */
+  .tray-restore{
+    position:absolute;
+    top:14px;left:8px;
+    z-index:5;
+    display:none;
+    align-items:center;gap:6px;
+    padding:6px 10px;
+    background:var(--bg-2);
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;letter-spacing:.18em;font-weight:700;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .tray-restore:hover{
+    color:var(--accent);
+    border-color:var(--accent-dim);
+    background:var(--accent-wash);
+  }
+  main.focus-mode .tray-restore{display:flex}
+  main.focus-mode .board-label{visibility:hidden}
+
+  /* Scope toggle — sits on the right edge of the board, always visible */
+  .scope-toggle{
+    position:absolute;
+    top:50%;right:0;
+    transform:translateY(-50%);
+    z-index:5;
+    display:none;           /* only shown after verify */
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    padding:10px 5px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-right:none;
+    border-radius:3px 0 0 3px;
+    cursor:pointer;
+    transition:all .15s;
+    writing-mode:vertical-rl;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    letter-spacing:.18em;
+    font-weight:700;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .scope-toggle:hover{
+    color:var(--accent);
+    border-color:var(--accent-dim);
+    background:var(--accent-wash);
+  }
+  .scope-toggle .st-icon{
+    writing-mode:horizontal-tb;
+    font-size:14px;
+    margin-bottom:2px;
+  }
+  /* Show the toggle once circuit is verified */
+  main.scope-visible .scope-toggle,
+  main.scope-visible ~ * .scope-toggle{display:flex}
+  /* Use a JS-driven class on the board instead */
+  .board.show-scope-toggle .scope-toggle{ display:flex }
+  .panel{
+    background:var(--bg-1);
+    padding:14px;
+    position:relative;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+  .panel h2{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);
+    padding-bottom:8px;
+    margin-bottom:10px;
+    border-bottom:1px dashed var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+    font-weight:700;
+  }
+  .panel h2 .num{color:var(--ink-soft);font-weight:400}
+  .panel h2 .header-controls{display:flex;align-items:center;gap:8px}
+  .panel-toggle{
+    width:24px;height:24px;
+    background:var(--bg-2);
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:3px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .panel-toggle:hover{
+    color:var(--accent);
+    border-color:var(--accent-dim);
+    background:var(--accent-wash);
+  }
+
+  /* ───── TRAY ───── */
+  .tray{display:flex;flex-direction:column;gap:6px}
+  .component{
+    background:var(--bg-2);
+    border:1px solid var(--line-soft);
+    border-radius:3px;
+    padding:8px 10px;
+    cursor:grab;
+    transition:all .15s ease;
+    display:flex;align-items:center;gap:10px;
+    position:relative;
+    user-select:none;
+  }
+  .component::before{
+    content:"";
+    position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:var(--accent);
+    transform:scaleY(0);transform-origin:top;
+    transition:transform .2s ease;
+  }
+  .component:hover{
+    border-color:var(--accent);
+    background:var(--accent-wash);
+    transform:translateX(2px);
+  }
+  .component:hover::before{transform:scaleY(1)}
+  .component.placed{
+    opacity:.4;
+    cursor:not-allowed;
+    /* keep pointer-events ON so we can show feedback when user tries to drag */
+  }
+  .component.placed:hover{
+    border-color:var(--line-soft);
+    background:var(--bg-2);
+    transform:none;
+  }
+  .component.placed:hover::before{transform:scaleY(0)}
+  .component.placed::after{
+    content:"✓";
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    color:var(--accent);font-weight:700;
+  }
+  .component.dragging{opacity:.5;cursor:grabbing}
+  .component.tool-active{
+    border-color:var(--accent);
+    background:var(--accent-wash);
+    box-shadow:inset 0 0 0 1px var(--accent);
+  }
+  .component.tool-active::before{transform:scaleY(1)}
+  .component-ico{
+    width:34px;height:22px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;
+  }
+  .component-ico svg{width:100%;height:100%;pointer-events:none}
+  .component-meta{display:flex;flex-direction:column;gap:1px;pointer-events:none;min-width:0}
+  .component-name{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--ink);font-weight:600;
+  }
+  .component-code{
+    font-size:9px;color:var(--ink-soft);letter-spacing:.08em;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .tray-divider{
+    font-family:'JetBrains Mono',monospace;font-size:9px;
+    color:var(--ink-soft);letter-spacing:.2em;
+    margin:10px 0 4px;padding-top:8px;
+    border-top:1px dashed var(--line);
+    font-weight:700;
+  }
+  .instructions{
+    margin-top:14px;padding-top:10px;
+    border-top:1px dashed var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+    color:var(--ink-dim);line-height:1.7;
+  }
+  .instructions b.hdr{color:var(--accent);letter-spacing:.1em;display:block;margin-bottom:4px;font-weight:700}
+  .instructions ol{padding-left:14px;margin-top:2px}
+  .instructions li{margin-bottom:3px}
+
+  /* ───── BOARD WRAP ───── */
+  .board-wrap{
+    background:var(--bg-2);
+    padding:10px 14px 14px;
+    display:flex;flex-direction:column;gap:10px;
+    /* Fill the full grid cell height. The flex column inside will
+       let .board grow and .bench-row stay at natural height.
+       overflow-y:auto scrolls when viewport is short. */
+    height:100%;
+    box-sizing:border-box;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+  /* In focus mode the board gets the extra 220px from the hidden tray.
+     Allow the board area to scroll vertically so no content is cut off. */
+  main.focus-mode .board-wrap{
+    overflow-y:auto;
+  }
+  .status-banner{
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    border-left:4px solid var(--line);
+    border-radius:3px;
+    padding:8px 14px;
+    display:flex;align-items:center;gap:12px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+    transition:all .3s ease;
+    flex-shrink:0;
+    position:sticky;       /* stays at the top of the scroll container */
+    top:0;
+    z-index:3;
+  }
+  .status-banner .icon{
+    font-size:16px;
+    flex-shrink:0;
+    width:26px;height:26px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    transition:all .3s;
+    font-weight:700;
+  }
+  .status-banner .msg{flex:1;line-height:1.3}
+  .status-banner .sub{
+    font-size:9px;color:var(--ink-soft);
+    letter-spacing:.15em;text-transform:uppercase;
+    margin-top:1px;display:block;
+  }
+  .status-banner.ok{
+    border-left-color:var(--accent);
+    background:var(--accent-wash);
+    color:var(--accent);
+  }
+  .status-banner.ok .icon{background:var(--accent);color:#0a1014;border-color:var(--accent)}
+  .status-banner.err{
+    border-left-color:var(--danger);
+    background:var(--danger-wash);
+    color:var(--danger);
+    animation:shake .4s;
+  }
+  .status-banner.err .icon{background:var(--danger);color:#0a1014;border-color:var(--danger)}
+  .status-banner.warn{
+    border-left-color:var(--amber);
+    background:var(--amber-wash);
+    color:var(--amber);
+  }
+  .status-banner.warn .icon{background:var(--amber);color:#0a1014;border-color:var(--amber)}
+  .status-banner.info{
+    border-left-color:var(--blueprint);
+    color:var(--blueprint);
+  }
+  .status-banner.info .icon{color:var(--blueprint);border-color:var(--blueprint)}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-3px)}
+    75%{transform:translateX(3px)}
+  }
+
+  .board{
+    position:relative;
+    background:var(--bg-1);
+    background-image:
+      radial-gradient(var(--line) 1px, transparent 1px);
+    background-size:18px 18px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    flex:1;
+    min-height:340px;
+    overflow:auto;           /* scrollable — circuit SVG is larger than visible area */
+  }
+  /* The SVG canvas is fixed at 1200×800 via HTML width/height attributes.
+     The .board scrolls to let users pan across the full canvas. */
+  .circuit-svg{ display:block; flex-shrink:0; }
+  .board-label{
+    position:absolute;top:8px;left:12px;
+    font-family:'JetBrains Mono',monospace;font-size:9px;
+    color:var(--ink-soft);letter-spacing:.2em;text-transform:uppercase;
+    z-index:2;
+    pointer-events:none;
+    font-weight:700;
+  }
+  .board-label .green{color:var(--accent)}
+  .mode-indicator{
+    position:absolute;top:8px;right:12px;
+    font-family:'JetBrains Mono',monospace;font-size:9px;
+    letter-spacing:.15em;
+    padding:3px 8px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:2px;
+    z-index:3;
+    pointer-events:none;
+    transition:all .2s;
+    color:var(--ink-dim);
+    font-weight:700;
+  }
+  .mode-indicator.wire-mode{
+    color:white;
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  .circuit-svg{
+    display:block;
+    position:relative;   /* in flow — .board scrolls around it */
+    z-index:3;
+  }
+
+  /* SVG graphics */
+  .ghost{pointer-events:none;opacity:.55}
+  .ghost *{pointer-events:none !important}
+  .terminal{
+    fill:white;
+    stroke:var(--amber);
+    stroke-width:1.5;
+    cursor:crosshair;
+    transition:all .15s;
+  }
+  .terminal:hover{
+    fill:var(--amber);
+    filter:drop-shadow(0 0 5px var(--amber));
+  }
+  .terminal.wire-start{
+    fill:var(--accent);
+    stroke:var(--accent);
+    filter:drop-shadow(0 0 6px var(--accent));
+  }
+  .terminal.connected{stroke:var(--accent)}
+  .terminal.power{stroke:#ff4e6b}
+  .terminal.power:hover{fill:#ff4e6b}
+
+  .user-wire{
+    stroke:var(--accent);
+    stroke-width:2;
+    fill:none;
+    cursor:pointer;
+  }
+  .user-wire:hover{stroke:var(--danger)}
+  .user-wire.energized{
+    stroke-dasharray:6 3;
+    animation:flow 1s linear infinite;
+  }
+  @keyframes flow{to{stroke-dashoffset:-18}}
+  .preview-wire{
+    stroke:var(--accent);
+    stroke-width:1.5;
+    stroke-dasharray:4 3;
+    fill:none;
+    opacity:.7;
+    pointer-events:none;
+  }
+
+  /* Current flow arrows along wires */
+  .flow-arrow{
+    fill:var(--amber);
+    stroke:#0a1014;
+    stroke-width:0.8;
+    filter:drop-shadow(0 0 5px rgba(255,179,71,0.9));
+    pointer-events:none;
+    animation:arrowPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes arrowPulse{
+    0%,100%{opacity:.85}
+    50%{opacity:1}
+  }
+  /* Current value labels — plain white text on the wire side, no boxes */
+  .current-label{
+    pointer-events:auto;
+    cursor:help;
+  }
+  .current-label text{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    fill:#ffffff;
+    paint-order:stroke;
+    stroke:#0a1014;
+    stroke-width:2.5;
+    stroke-linejoin:round;
+    pointer-events:none;
+    transition:opacity .15s, fill .15s;
+  }
+  .current-label .cl-compact-text{
+    font-size:16px;
+    opacity:1;
+  }
+  .current-label .cl-full-text{
+    font-size:13px;
+    opacity:0;
+  }
+  .current-label .cl-hit{
+    fill:transparent;
+    pointer-events:all;
+  }
+  .current-label:hover .cl-compact-text{ opacity:0 }
+  .current-label:hover .cl-full-text{
+    opacity:1;
+    fill:var(--amber);
+  }
+
+  /* ───── VIRTUAL GROUND MARKER ───── */
+  .vground{ pointer-events:auto; cursor:help; }
+  .vg-halo{
+    fill:none;
+    stroke:var(--accent);
+    stroke-width:1.5;
+    opacity:.45;
+    animation:vgPulse 1.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes vgPulse{
+    0%,100%{ r:9; opacity:.45 }
+    50%    { r:14; opacity:.15 }
+  }
+  .vg-dot{
+    fill:var(--accent);
+    stroke:#0a1014;
+    stroke-width:1.5;
+    filter:drop-shadow(0 0 6px rgba(0,255,163,0.8));
+    pointer-events:none;
+  }
+  .vg-leader{
+    stroke:var(--accent);
+    stroke-width:1;
+    stroke-dasharray:2 2;
+    opacity:.6;
+    pointer-events:none;
+  }
+  .vg-bg{
+    fill:var(--accent);
+    stroke:#0a1014;
+    stroke-width:1.2;
+  }
+  .vg-text{
+    fill:#0a1014;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:11px;
+    letter-spacing:.12em;
+    pointer-events:none;
+  }
+  .vg-hit{
+    fill:transparent;
+    pointer-events:all;
+  }
+
+  /* Virtual-ground tooltip — shown when user hovers the badge or the node */
+  .vg-tooltip{
+    position:fixed;
+    z-index:160;
+    background:var(--bg-1);
+    border:1px solid var(--accent);
+    border-radius:4px;
+    padding:14px 16px;
+    min-width:280px;
+    max-width:340px;
+    box-shadow:0 10px 30px rgba(0,0,0,.6), 0 0 0 1px rgba(0,255,163,0.15),
+               0 0 20px rgba(0,255,163,0.2);
+    font-family:'Space Grotesk', sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    line-height:1.55;
+    pointer-events:none;
+    animation:popIn .12s ease-out;
+  }
+  .vg-tooltip h4{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:.2em;
+    color:var(--accent);
+    text-transform:uppercase;
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .vg-tooltip .vg-eq{
+    background:var(--bg-2);
+    border-left:2px solid var(--accent);
+    padding:8px 10px;
+    margin:8px 0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--accent);
+  }
+  .vg-tooltip .vg-eq span.dim{color:var(--ink-soft)}
+  .vg-tooltip p{ margin:6px 0; color:var(--ink) }
+  .vg-tooltip p.note{ color:var(--ink-soft); font-size:11.5px; margin-top:8px }
+
+  /* Clipping tooltip — same pattern as VG tooltip but danger-themed */
+  .clip-tooltip{
+    position:fixed;
+    z-index:160;
+    background:var(--bg-1);
+    border:1px solid var(--danger);
+    border-radius:4px;
+    padding:14px 16px;
+    min-width:280px;
+    max-width:340px;
+    box-shadow:0 10px 30px rgba(0,0,0,.6),
+               0 0 0 1px rgba(255,78,107,0.15),
+               0 0 20px rgba(255,78,107,0.2);
+    font-family:'Space Grotesk', sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    line-height:1.55;
+    pointer-events:none;
+    animation:popIn .12s ease-out;
+  }
+  .clip-tooltip h4{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:.2em;
+    color:var(--danger);
+    text-transform:uppercase;
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .clip-tooltip .clip-eq{
+    background:var(--bg-2);
+    border-left:2px solid var(--danger);
+    padding:8px 10px;
+    margin:8px 0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--danger);
+  }
+  .clip-tooltip .clip-eq span.dim{color:var(--ink-soft)}
+  .clip-tooltip p{ margin:6px 0; color:var(--ink) }
+  .clip-tooltip ul{ margin:6px 0 4px 0; padding-left:18px; color:var(--ink-soft) }
+  .clip-tooltip ul li{ margin:3px 0; font-size:12px }
+  .clip-tooltip ul li b{ color:var(--ink) }
+
+  /* ───── ZOOM BUTTON (on board) ───── */
+  .zoom-btn{
+    position:absolute;
+    top:8px;right:108px;
+    z-index:4;
+    display:flex;align-items:center;gap:6px;
+    padding:6px 10px;
+    background:var(--bg-2);
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    border-radius:3px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;letter-spacing:.18em;font-weight:700;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .zoom-btn:hover{
+    background:var(--accent-wash);
+    border-color:var(--accent);
+    box-shadow:0 0 12px rgba(0,255,163,0.3);
+  }
+  .zoom-btn:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+    color:var(--ink-dim);
+    border-color:var(--line);
+  }
+  .zoom-btn:disabled:hover{
+    background:var(--bg-2);
+    box-shadow:none;
+  }
+
+  /* ───── FULLSCREEN OVERLAY ───── */
+  .zoom-overlay{
+    position:fixed;
+    inset:0;
+    z-index:200;
+    background:var(--bg-0);
+    display:flex;flex-direction:column;
+    animation:zoomIn .25s ease-out;
+  }
+  .zoom-overlay[hidden]{display:none}
+  @keyframes zoomIn{
+    from{opacity:0;transform:scale(0.985)}
+    to{opacity:1;transform:none}
+  }
+  .zoom-header{
+    flex-shrink:0;
+    display:flex;align-items:center;gap:24px;
+    padding:14px 28px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  }
+  .zoom-title{display:flex;flex-direction:column;gap:2px;flex:1}
+  .zoom-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;letter-spacing:.3em;
+    color:var(--accent);
+    font-weight:700;
+  }
+  .zoom-h1{
+    font-family:'Unica One', sans-serif;
+    font-size:24px;letter-spacing:.06em;
+    color:var(--ink);
+    text-transform:uppercase;
+  }
+  .zoom-readout-row{display:flex;gap:12px}
+  .zoom-readout{
+    background:var(--bg-2);
+    padding:8px 18px;
+    border-left:3px solid var(--accent);
+    border-radius:0 3px 3px 0;
+    min-width:120px;
+  }
+  .zoom-readout .lbl{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;color:var(--ink-soft);
+    letter-spacing:.2em;text-transform:uppercase;font-weight:700;
+  }
+  .zoom-readout .val{
+    font-family:'JetBrains Mono', monospace;
+    font-size:24px;color:var(--ink);font-weight:700;
+    margin-top:2px;
+  }
+  .zoom-readout.primary{border-left-color:var(--feedback)}
+  .zoom-readout.primary .val{color:var(--feedback);font-size:26px}
+
+  .zoom-stage{
+    flex:1;
+    padding:20px;
+    overflow:auto;        /* allow vertical AND horizontal scrolling at high zoom */
+    background:var(--bg-2);
+    position:relative;
+    /* Custom scrollbar to fit the dark theme */
+    scrollbar-width:thin;
+    scrollbar-color:var(--accent-dim) var(--bg-2);
+  }
+  .zoom-stage::-webkit-scrollbar{ width:10px; height:10px }
+  .zoom-stage::-webkit-scrollbar-track{ background:var(--bg-1) }
+  .zoom-stage::-webkit-scrollbar-thumb{
+    background:var(--accent-dim);
+    border-radius:5px;
+    border:2px solid var(--bg-1);
+  }
+  .zoom-stage::-webkit-scrollbar-thumb:hover{ background:var(--accent) }
+
+  /* The zoom-pan grows to the scaled size, so the stage's overflow detects it.
+     Its dimensions are set in JS based on the current zoom factor. */
+  .zoom-pan{
+    position:relative;
+    transition:width .2s ease, height .2s ease;
+  }
+  /* The actual transform happens on this inner wrapper around the board.
+     It has a *fixed* natural size based on the stage at scale=1; only the
+     transform changes when the user zooms. */
+  .zoom-content{
+    transform-origin:0 0;
+    transition:transform .2s ease;
+    display:flex;
+    /* Natural size: filled to stage size at scale=1 (set by JS) */
+  }
+  .zoom-content > .board{
+    flex:1;
+    width:100%;
+    height:100%;
+    min-height:0;
+    border-width:2px;
+  }
+
+  /* Zoom controls in fullscreen header */
+  .zoom-controls{
+    display:flex;align-items:center;gap:6px;
+    padding:4px 8px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:3px;
+    margin-right:8px;
+  }
+  .zoom-ctrl-btn{
+    width:30px;height:30px;
+    background:var(--bg-1);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:18px;font-weight:700;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .12s;
+    line-height:1;
+  }
+  .zoom-ctrl-btn.reset-btn{font-size:16px}
+  .zoom-ctrl-btn:hover{
+    color:var(--accent);
+    border-color:var(--accent);
+    background:var(--accent-wash);
+  }
+  .zoom-ctrl-btn:disabled{
+    opacity:.4;cursor:not-allowed;
+    color:var(--ink-soft);
+  }
+  .zoom-ctrl-btn:disabled:hover{
+    background:var(--bg-1);
+    border-color:var(--line);
+    color:var(--ink-soft);
+  }
+  .zoom-level{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--accent);
+    font-weight:700;
+    letter-spacing:.05em;
+    min-width:48px;text-align:center;
+  }
+
+  .placed-component text{
+    font-family:'JetBrains Mono',monospace;
+    fill:#ffffff;
+  }
+  .placed-component{cursor:move}
+  .placed-component.moving{opacity:.6}
+  .placed-component .drag-area{
+    fill:transparent;
+    cursor:move;
+    pointer-events:all;
+  }
+  .placed-component:hover .drag-area{
+    fill:rgba(0,255,163,0.06);
+    stroke:var(--accent);
+    stroke-width:1;
+    stroke-dasharray:3 3;
+  }
+
+  /* Context menu */
+  .context-menu{
+    position:fixed;
+    background:var(--bg-1);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:4px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+    z-index:200;
+    min-width:180px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    animation:menuIn .12s ease-out;
+  }
+  @keyframes menuIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+  .context-menu .cm-header{
+    font-size:9px;letter-spacing:.2em;color:var(--ink-soft);
+    padding:5px 8px 3px;text-transform:uppercase;
+    border-bottom:1px dashed var(--line-soft);
+    margin-bottom:3px;font-weight:700;
+  }
+  .context-menu .cm-item{
+    padding:7px 10px;cursor:pointer;
+    color:var(--ink);
+    display:flex;align-items:center;gap:10px;
+    border-radius:2px;transition:all .12s;
+    user-select:none;
+  }
+  .context-menu .cm-item:hover{background:var(--accent-wash);color:var(--accent)}
+  .context-menu .cm-item.danger:hover{background:var(--danger-wash);color:var(--danger)}
+  .context-menu .cm-icon{width:14px;text-align:center;opacity:.7}
+  .context-menu .cm-hint{margin-left:auto;font-size:9px;color:var(--ink-soft);letter-spacing:.1em}
+
+  /* Bottom row — sticky at the bottom of the scroll container */
+  .bench-row{
+    flex-shrink:0;
+    position:sticky;
+    bottom:0;
+    z-index:3;
+    background:var(--bg-2);  /* hide scrolled content beneath it */
+    padding-top:4px;
+  }
+  .bench-row .controls{margin:0}
+
+  /* ───── BOTTOM ACTION BAR ───── */
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:var(--bg-1);
+    padding:14px 18px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    flex-shrink:0;
+  }
+  .action-hint{
+    flex:1;
+    display:flex;align-items:center;gap:12px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    color:var(--ink-dim);
+    font-weight:400;
+  }
+  .action-hint .hint-icon{
+    width:28px;height:28px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-wash);
+    border:1px solid var(--accent);
+    color:var(--accent);
+    border-radius:50%;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .action-hint b{color:var(--ink);font-weight:600}
+  .action-hint .amber-text{color:var(--amber)}
+  .action-hint .blue-text{color:var(--blueprint)}
+  .action-hint.ready{color:var(--ink)}
+
+  /* ───── INLINE VALUE EDITOR POPOVER ───── */
+  .value-popover{
+    position:absolute;
+    z-index:150;
+    background:var(--bg-1);
+    border:1px solid var(--accent);
+    border-radius:4px;
+    padding:14px 16px;
+    min-width:220px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.6), 0 0 0 1px rgba(0,255,163,0.15),
+                0 0 20px rgba(0,255,163,0.2);
+    animation:popIn .15s ease-out;
+  }
+  @keyframes popIn{from{opacity:0;transform:translateY(-4px) scale(.96)}to{opacity:1;transform:none}}
+  .value-popover::before{
+    content:"";
+    position:absolute;top:-7px;left:20px;
+    width:12px;height:12px;
+    background:var(--bg-1);
+    border-left:1px solid var(--accent);
+    border-top:1px solid var(--accent);
+    transform:rotate(45deg);
+  }
+  .vp-header{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:10px;
+  }
+  .vp-label{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;color:var(--ink);font-weight:600;
+  }
+  .vp-label sub{color:var(--accent);font-size:10px}
+  .vp-value{
+    font-family:'JetBrains Mono', monospace;
+    font-size:15px;
+    color:var(--accent);
+    background:var(--accent-wash);
+    border:1px solid var(--accent);
+    padding:3px 10px;
+    border-radius:3px;
+    font-weight:700;
+    min-width:78px;text-align:center;
+  }
+  .vp-slider{
+    -webkit-appearance:none;appearance:none;
+    width:100%;height:8px;
+    background:linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill,50%), var(--line-soft) var(--fill,50%), var(--line-soft) 100%);
+    border-radius:4px;
+    outline:none;cursor:pointer;margin:4px 0 6px;
+  }
+  .vp-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:20px;height:20px;background:white;
+    border:2px solid var(--accent);border-radius:50%;cursor:grab;
+    box-shadow:0 2px 8px rgba(0,255,163,0.5);
+  }
+  .vp-slider::-moz-range-thumb{
+    width:20px;height:20px;background:white;
+    border:2px solid var(--accent);border-radius:50%;cursor:grab;
+    box-shadow:0 2px 8px rgba(0,255,163,0.5);
+  }
+  .vp-range{
+    display:flex;justify-content:space-between;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;color:var(--ink-dim);
+    letter-spacing:.05em;
+  }
+  .vp-presets{
+    display:flex;gap:6px;margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+  .vp-preset{
+    flex:1;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;font-weight:700;
+    padding:6px 4px;
+    cursor:pointer;
+    border-radius:2px;
+    transition:all .15s;
+  }
+  .vp-preset:hover{
+    background:var(--accent-wash);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+
+  /* On-board value text — same white-with-dark-halo treatment as component labels */
+  .placed-component .val{
+    fill:#ffffff;
+    font-weight:700;
+    cursor:pointer;
+    paint-order:stroke;
+    stroke:#0a1014;
+    stroke-width:2;
+    stroke-linejoin:round;
+    transition:fill .15s;
+  }
+  .placed-component .val:hover{
+    fill:var(--accent);
+  }
+  .placed-component .val.locked{
+    fill:var(--ink-dim);
+    cursor:not-allowed;
+  }
+  /* Invisible expanded hit-box around the value text so clicking is easy */
+  .val-hit{
+    fill:transparent;
+    pointer-events:all;       /* transparent SVG fills need this to be clickable */
+    cursor:pointer;
+  }
+  .val-hit.locked{cursor:not-allowed}
+  /* The whole edit-chip group should also pass pointer events through to its members */
+  .edit-chip{cursor:pointer}
+
+  .btn{
+    background:var(--accent);
+    color:#0a1014;
+    border:none;
+    padding:9px 14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;letter-spacing:.15em;font-weight:700;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all .15s ease;
+    border-radius:2px;
+    white-space:nowrap;
+  }
+  .btn:hover:not(:disabled){
+    background:var(--accent-bright);
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(0,255,163,0.3);
+  }
+  .btn:disabled{background:var(--line);color:var(--ink-soft);cursor:not-allowed}
+  .btn.reset{
+    background:transparent;color:var(--ink-dim);
+    border:1px solid var(--line);
+  }
+  .btn.reset:hover{
+    color:var(--danger);border-color:var(--danger);
+    box-shadow:none;transform:none;background:var(--danger-wash);
+  }
+  .btn.verify{background:var(--amber);color:#0a1014;text-shadow:none}
+  .btn.verify:hover:not(:disabled){
+    background:#ffc875;
+    box-shadow:0 4px 12px rgba(255,179,71,0.35);
+  }
+
+  /* ───── RIGHT PANEL ───── */
+  .scope{
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px;
+    margin-bottom:12px;
+    display:flex;flex-direction:column;
+  }
+  .scope-screen{
+    background:#0a1014;
+    border:1px solid var(--line);
+    aspect-ratio:16/10;
+    position:relative;overflow:hidden;border-radius:2px;
+    align-self:stretch;
+  }
+  .scope-header{
+    display:flex;justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;font-size:9px;
+    color:var(--ink-dim);letter-spacing:.15em;
+    margin-bottom:6px;text-transform:uppercase;font-weight:700;
+  }
+  /* When the scope is clipping, give the status badge a help cursor +
+     large blinking danger style so it's impossible to miss. */
+  #scopeStatus{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    letter-spacing:.18em;
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  #scopeStatus.clipping{
+    cursor:help;
+    font-size:13px;
+    letter-spacing:.12em;
+    color:var(--danger) !important;
+    animation:clipBlink .7s ease-in-out infinite;
+    text-shadow:0 0 10px rgba(255,78,107,0.8);
+  }
+  @keyframes clipBlink{
+    0%,100%{ opacity:1; }
+    45%    { opacity:0.15; }
+  }
+  .scope-legend{display:flex;gap:8px;align-items:center;font-size:9px}
+  .scope-legend .ch{display:inline-flex;gap:4px;align-items:center}
+  .scope-legend .ch::before{content:"";width:10px;height:2px;background:var(--ch-color)}
+  .scope-legend .ch1{--ch-color:var(--info);color:var(--info)}
+  .scope-legend .ch2{--ch-color:var(--feedback);color:var(--feedback)}
+  .scope-screen::before{
+    content:"";
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(0,255,163,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,163,0.12) 1px, transparent 1px);
+    background-size:10% 20%;
+  }
+  .scope-screen svg{position:absolute;inset:0;width:100%;height:100%}
+
+  .readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .readout-item{
+    background:var(--bg-2);
+    padding:14px 16px;
+    border-left:3px solid var(--accent);
+    border-radius:0 3px 3px 0;
+  }
+  .readout-item .lbl{
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+    color:var(--ink-soft);letter-spacing:.2em;text-transform:uppercase;
+    font-weight:700;
+  }
+  .readout-item .val{
+    font-family:'JetBrains Mono',monospace;font-size:28px;
+    color:var(--ink);font-weight:700;margin-top:4px;
+    letter-spacing:.02em;
+  }
+  .readout-item.primary{border-left-color:var(--feedback)}
+  .readout-item.primary .val{color:var(--feedback);font-size:30px}
+
+  .formula{
+    background:var(--bg-2);
+    border:1px solid var(--line-soft);
+    border-radius:3px;
+    padding:10px 12px;margin-bottom:10px;
+    position:relative;
+  }
+  .formula-title{
+    font-family:'JetBrains Mono',monospace;font-size:9px;
+    color:var(--ink-soft);letter-spacing:.2em;
+    text-transform:uppercase;margin-bottom:5px;font-weight:700;
+  }
+  .formula-eq{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);line-height:1.6}
+  .formula-eq .neg{color:var(--danger);font-weight:700}
+
+  .console{
+    background:#0a1014;
+    border:1px solid var(--line-soft);
+    border-radius:3px;
+    padding:8px 10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;line-height:1.6;
+    flex:1;min-height:100px;max-height:180px;
+    overflow-y:auto;
+  }
+  .console-header{
+    display:flex;align-items:center;gap:6px;
+    padding-bottom:5px;margin-bottom:5px;
+    border-bottom:1px dashed var(--line-soft);
+    font-size:9px;color:var(--ink-soft);
+    letter-spacing:.15em;text-transform:uppercase;font-weight:700;
+  }
+  .log-entry{padding:2px 0;display:flex;gap:6px;animation:entry .3s ease}
+  @keyframes entry{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
+  .log-time{color:var(--ink-soft);flex-shrink:0;font-size:9px}
+  .log-msg{color:var(--ink-dim);word-break:break-word}
+  .log-entry.ok .log-msg{color:var(--accent)}
+  .log-entry.warn .log-msg{color:var(--amber)}
+  .log-entry.err .log-msg{color:var(--danger)}
+  .log-entry.info .log-msg{color:var(--blueprint)}
+  .log-entry .marker{color:var(--ink-soft);font-weight:700}
+  .log-entry.ok .marker{color:var(--accent)}
+  .log-entry.warn .marker{color:var(--amber)}
+  .log-entry.err .marker{color:var(--danger)}
+
+  .right-panel{display:flex;flex-direction:column;gap:0}
+  .right-panel > .scope{flex:1;display:flex;flex-direction:column}
+  .right-panel > .scope .scope-screen{flex:1;aspect-ratio:auto;min-height:240px}
+  .right-panel > .readout{flex-shrink:0}
+
+  /* Responsive - collapse panels on narrow screens */
+  @media(max-width:1300px){
+    main.scope-visible{grid-template-columns: 200px 1fr 300px}
+    main.focus-mode.scope-visible{grid-template-columns: 0 1fr 300px}
+    h1{font-size:26px}
+  }
+  @media(max-width:1100px){
+    main.scope-visible{grid-template-columns: 190px 1fr 270px}
+    main.focus-mode.scope-visible{grid-template-columns: 0 1fr 270px}
+  }
+  @media(max-width:950px){
+    main{grid-template-columns:1fr;height:auto;overflow:visible}
+    body{overflow:auto;height:auto}
+    .panel{max-height:none}
+    .scope-screen{max-height:180px}
+  }
+
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:var(--bg-2)}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--accent-dim)}
+
+  /* Slightly more prominent scrollbar specifically on the circuit board */
+  .board::-webkit-scrollbar{width:8px;height:8px}
+  .board::-webkit-scrollbar-track{background:var(--bg-2)}
+  .board::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .board::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--ink-soft)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-tag">◆ EDWISELY // ANALOG ELECTRONICS</span>
+    <h1>Inverting <span class="thin">Amplifier Lab</span></h1>
+  </div>
+  <div class="header-formula">
+    <div class="hf-title">Governing Equation</div>
+    <div class="hf-eq">
+      <span class="hf-line">A<sub>v</sub> <span class="hf-op">=</span> <span class="hf-neg">−</span> <span class="hf-frac"><span class="hf-num">R<sub>f</sub></span><span class="hf-den">R<sub>in</sub></span></span></span>
+      <span class="hf-line">V<sub>out</sub> <span class="hf-op">=</span> A<sub>v</sub> · V<sub>in</sub></span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT: TRAY -->
+  <aside class="panel">
+    <h2>
+      <span>Components</span>
+      <span class="header-controls">
+        <span class="num">[08]</span>
+        <button class="panel-toggle" id="trayToggleBtn" title="Hide components panel" aria-label="Hide components">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4">
+            <path d="M16 5 L9 12 L16 19"/>
+          </svg>
+        </button>
+      </span>
+    </h2>
+    <div class="tray" id="tray">
+      <div class="component" draggable="true" data-type="vin">
+        <div class="component-ico"><svg viewBox="0 0 40 28"><circle cx="20" cy="14" r="10" fill="none" stroke="#4ab6d6" stroke-width="1.5"/><path d="M14 14 Q17 9 20 14 T26 14" fill="none" stroke="#4ab6d6" stroke-width="1.5"/></svg></div>
+        <div class="component-meta">
+          <span class="component-name">V<sub>in</sub></span>
+          <span class="component-code">SIGNAL SRC</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="Rin">
+        <div class="component-ico"><svg viewBox="0 0 60 24"><path d="M4 12 L14 12 L17 4 L23 20 L29 4 L35 20 L41 4 L44 12 L56 12" fill="none" stroke="#b87333" stroke-width="1.5"/></svg></div>
+        <div class="component-meta">
+          <span class="component-name">R<sub>in</sub></span>
+          <span class="component-code">INPUT RES</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="Rf">
+        <div class="component-ico"><svg viewBox="0 0 60 24"><path d="M4 12 L14 12 L17 4 L23 20 L29 4 L35 20 L41 4 L44 12 L56 12" fill="none" stroke="#ffb347" stroke-width="1.5"/></svg></div>
+        <div class="component-meta">
+          <span class="component-name">R<sub>f</sub></span>
+          <span class="component-code">FEEDBACK</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="opamp">
+        <div class="component-ico"><svg viewBox="0 0 50 36"><path d="M6 6 L6 30 L40 18 Z" fill="none" stroke="#00ffa3" stroke-width="1.5"/><text x="11" y="16" font-family="monospace" font-size="8" fill="#ff4e6b">−</text><text x="11" y="28" font-family="monospace" font-size="8" fill="#00ffa3">+</text></svg></div>
+        <div class="component-meta">
+          <span class="component-name">Op-Amp</span>
+          <span class="component-code">μA741 IC</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="gnd">
+        <div class="component-ico"><svg viewBox="0 0 30 30"><path d="M15 6 L15 16 M6 16 L24 16 M10 20 L20 20 M13 24 L17 24" stroke="#d8f1e8" stroke-width="1.5" fill="none"/></svg></div>
+        <div class="component-meta">
+          <span class="component-name">Ground</span>
+          <span class="component-code">0V REF</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="vcc">
+        <div class="component-ico"><svg viewBox="0 0 30 30"><line x1="15" y1="6" x2="15" y2="22" stroke="#ff4e6b" stroke-width="1.5"/><line x1="10" y1="6" x2="20" y2="6" stroke="#ff4e6b" stroke-width="2"/><text x="15" y="18" font-family="monospace" font-size="8" fill="#ff4e6b" text-anchor="middle">+</text></svg></div>
+        <div class="component-meta">
+          <span class="component-name">+V<sub>CC</sub></span>
+          <span class="component-code">+12V RAIL</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="vee">
+        <div class="component-ico"><svg viewBox="0 0 30 30"><line x1="15" y1="6" x2="15" y2="22" stroke="#4ab6d6" stroke-width="1.5"/><line x1="10" y1="22" x2="20" y2="22" stroke="#4ab6d6" stroke-width="2"/><text x="15" y="16" font-family="monospace" font-size="8" fill="#4ab6d6" text-anchor="middle">−</text></svg></div>
+        <div class="component-meta">
+          <span class="component-name">−V<sub>EE</sub></span>
+          <span class="component-code">−12V RAIL</span>
+        </div>
+      </div>
+      <div class="component" draggable="true" data-type="scope">
+        <div class="component-ico"><svg viewBox="0 0 44 30">
+          <rect x="6" y="2" width="32" height="24" rx="2" fill="none" stroke="#ffb347" stroke-width="1.2"/>
+          <rect x="9" y="5" width="20" height="14" rx="1" fill="rgba(255,179,71,0.06)" stroke="#ffb347" stroke-width="0.7"/>
+          <path d="M10 12 Q14 6 18 12 T26 12" stroke="#ffb347" stroke-width="1.1" fill="none"/>
+          <line x1="29" y1="12" x2="38" y2="12" stroke="#ffb347" stroke-width="1.2"/>
+          <circle cx="39" cy="12" r="1.6" fill="#ffb347"/>
+          <line x1="6" y1="10" x2="1" y2="10" stroke="#ffb347" stroke-width="1.2"/>
+          <circle cx="0" cy="10" r="1.4" fill="#ffb347"/>
+          <line x1="6" y1="18" x2="1" y2="18" stroke="#d8f1e8" stroke-width="1.2"/>
+          <circle cx="0" cy="18" r="1.4" fill="#d8f1e8"/>
+        </svg></div>
+        <div class="component-meta">
+          <span class="component-name">Oscilloscope</span>
+          <span class="component-code">CH1 PROBE</span>
+        </div>
+      </div>
+
+      <div class="tray-divider">WIRING TOOL</div>
+      <div class="component" id="wireTool">
+        <div class="component-ico"><svg viewBox="0 0 50 24"><path d="M4 12 L46 12" stroke="#00ffa3" stroke-width="2" fill="none"/><circle cx="4" cy="12" r="3" fill="#00ffa3"/><circle cx="46" cy="12" r="3" fill="#00ffa3"/></svg></div>
+        <div class="component-meta">
+          <span class="component-name">Wire</span>
+          <span class="component-code">CLICK TO CONNECT</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <b class="hdr">⟶ HOW TO BUILD</b>
+      <ol>
+        <li><b style="color:var(--ink)">Drag</b> components onto the board.</li>
+        <li>Drag a placed component to move it. <b>Right-click</b> to delete.</li>
+        <li>Click <b style="color:var(--accent)">Wire</b>, then click two terminals.</li>
+        <li>Connect op-amp to <b style="color:var(--danger)">+V<sub>CC</sub></b> and <b style="color:var(--blueprint)">−V<sub>EE</sub></b> rails.</li>
+        <li>Press <b style="color:var(--amber)">Verify</b>, then click values on the board to tune them live.</li>
+      </ol>
+    </div>
+  </aside>
+
+  <!-- CENTER: BOARD + CONTROLS -->
+  <section class="board-wrap">
+    <div class="status-banner info" id="statusBanner">
+      <div class="icon">›</div>
+      <div class="msg">
+        Drag components onto the board, then click the <b>Wire</b> tool to connect them.
+        <span class="sub">STEP 1 OF 4 — PLACE COMPONENTS</span>
+      </div>
+    </div>
+
+    <div class="board" id="board">
+      <div class="board-label">BOARD: <span class="green">INV-AMP-04</span></div>
+      <div class="mode-indicator" id="modeIndicator">SELECT</div>
+      <button class="tray-restore" id="trayRestoreBtn" title="Show components panel">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4">
+          <path d="M8 5 L15 12 L8 19"/>
+        </svg>
+        <span>Components</span>
+      </button>
+      <button class="zoom-btn" id="zoomBtn" title="Open in fullscreen">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M3 3 H9 M3 3 V9 M21 3 H15 M21 3 V9 M3 21 H9 M3 21 V15 M21 21 H15 M21 21 V15"/>
+        </svg>
+        <span>Zoom</span>
+      </button>
+      <button class="scope-toggle" id="scopeToggleBtn" title="Show/hide oscilloscope panel">
+        <span class="st-icon">📊</span>
+        <span id="scopeToggleLabel">Scope</span>
+      </button>
+      <svg class="circuit-svg" viewBox="0 0 1200 800" width="1200" height="800" preserveAspectRatio="xMinYMin meet" id="svg">
+        <defs>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="zoomGroup">
+          <g id="wiresLayer"></g>
+          <g id="placedLayer"></g>
+          <g id="flowLayer"></g>
+          <g id="ghostLayer"></g>
+          <g id="previewLayer"></g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="bench-row">
+      <div class="controls">
+        <div class="action-hint" id="actionHint">
+          <span class="hint-icon">✎</span>
+          <span>Values on the board will become editable once the circuit is verified.</span>
+        </div>
+        <button class="btn verify" id="verifyBtn">✓ Verify</button>
+        <button class="btn reset" id="resetBtn">↺ Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: SCOPE + READOUT + FORMULA + CONSOLE -->
+  <aside class="panel right-panel">
+    <h2><span>Oscilloscope</span><span class="num">CH1/CH2</span></h2>
+
+    <div class="scope">
+      <div class="scope-header">
+        <div class="scope-legend">
+          <span class="ch ch1">V<sub>IN</sub></span>
+          <span class="ch ch2">V<sub>OUT</sub></span>
+        </div>
+        <span id="scopeStatus">IDLE</span>
+      </div>
+      <div class="scope-screen">
+        <svg viewBox="0 0 200 125" preserveAspectRatio="none" id="scopeSvg">
+          <line x1="0" y1="62.5" x2="200" y2="62.5" stroke="rgba(0,255,163,0.35)" stroke-width="0.3"/>
+          <line x1="100" y1="0" x2="100" y2="125" stroke="rgba(0,255,163,0.35)" stroke-width="0.3"/>
+          <path id="vinTrace" d="" fill="none" stroke="#4ab6d6" stroke-width="0.9" opacity="0"/>
+          <path id="voutTrace" d="" fill="none" stroke="#ffb347" stroke-width="0.9" opacity="0"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div class="readout-item">
+        <div class="lbl">A<sub>v</sub></div>
+        <div class="val" id="gainOut">—</div>
+      </div>
+      <div class="readout-item primary">
+        <div class="lbl">V<sub>out</sub></div>
+        <div class="val" id="voutOut">—</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Fullscreen overlay for zoomed-in circuit view -->
+<div id="zoomOverlay" class="zoom-overlay" hidden>
+  <div class="zoom-header">
+    <div class="zoom-title">
+      <span class="zoom-eyebrow">FULLSCREEN VIEW</span>
+      <span class="zoom-h1">Inverting Amplifier — Live Circuit</span>
+    </div>
+    <div class="zoom-readout-row">
+      <div class="zoom-readout">
+        <div class="lbl">A<sub>v</sub></div>
+        <div class="val" id="zoomGain">—</div>
+      </div>
+      <div class="zoom-readout primary">
+        <div class="lbl">V<sub>out</sub></div>
+        <div class="val" id="zoomVout">—</div>
+      </div>
+    </div>
+    <div class="zoom-controls">
+      <button class="zoom-ctrl-btn" id="zoomOutBtn" title="Zoom out (−)">−</button>
+      <span class="zoom-level" id="zoomLevel">100%</span>
+      <button class="zoom-ctrl-btn" id="zoomInBtn" title="Zoom in (+)">+</button>
+      <button class="zoom-ctrl-btn reset-btn" id="zoomResetBtn" title="Reset zoom">⟲</button>
+    </div>
+    <button class="btn reset" id="zoomCloseBtn">✕ Close</button>
+  </div>
+  <div class="zoom-stage" id="zoomStage">
+    <div class="zoom-pan" id="zoomPan">
+      <div class="zoom-content" id="zoomContent">
+        <!-- the board element is moved here while overlay is open -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const placed = {};
+const wires  = [];
+let   wireMode = false;
+let   wireStart = null;
+let   circuitVerified = false;
+
+const COMPONENTS = {
+  vin:{
+    w:80, h:80,         /* extended to accommodate longer leads */
+    /* Terminals sit at extreme right and bottom — well clear of the source body */
+    terminals:{ out:{dx:80, dy:30}, gnd:{dx:30, dy:80} },
+    render:(x,y)=>`
+      <circle cx="${x+30}" cy="${y+30}" r="22" fill="rgba(74,182,214,0.1)" stroke="#4ab6d6" stroke-width="1.8"/>
+      <path d="M ${x+18} ${y+30} Q ${x+24} ${y+20} ${x+30} ${y+30} T ${x+42} ${y+30}" stroke="#4ab6d6" stroke-width="1.5" fill="none"/>
+      <text x="${x+30}" y="${y-8}" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2" stroke-linejoin="round">V<tspan font-size="10" dy="3">in</tspan></text>
+      <!-- Long terminal leads -->
+      <line x1="${x+52}" y1="${y+30}" x2="${x+80}" y2="${y+30}" stroke="#4ab6d6" stroke-width="1.5"/>
+      <line x1="${x+30}" y1="${y+52}" x2="${x+30}" y2="${y+80}" stroke="#4ab6d6" stroke-width="1.5"/>
+      <!-- Editable value -->
+      <g class="edit-chip" data-edit-value="vin">
+        <rect class="val-hit ${circuitVerified?'':'locked'}" x="${x-8}" y="${y+86}" width="76" height="20"/>
+        <text x="${x+30}" y="${y+100}" text-anchor="middle" font-size="14" class="val ${circuitVerified?'':'locked'}" data-val-for="vin">${fmtVal('vin')}</text>
+      </g>`
+  },
+  Rin:{
+    w:140, h:30,        /* extended from 100 to 140 → longer leads on both sides */
+    terminals:{ a:{dx:0, dy:15}, b:{dx:140, dy:15} },
+    render:(x,y)=>`
+      <!-- Long left lead -->
+      <line x1="${x}" y1="${y+15}" x2="${x+34}" y2="${y+15}" stroke="#b87333" stroke-width="2"/>
+      <!-- Resistor body (zigzag) -->
+      <path d="M ${x+34} ${y+15} L ${x+40} ${y+3} L ${x+52} ${y+27} L ${x+64} ${y+3} L ${x+76} ${y+27} L ${x+88} ${y+3} L ${x+100} ${y+27} L ${x+106} ${y+15}" stroke="#b87333" stroke-width="2" fill="none"/>
+      <!-- Long right lead -->
+      <line x1="${x+106}" y1="${y+15}" x2="${x+140}" y2="${y+15}" stroke="#b87333" stroke-width="2"/>
+      <text x="${x+70}" y="${y-8}" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2" stroke-linejoin="round">R<tspan font-size="10" dy="3">in</tspan></text>
+      <g class="edit-chip" data-edit-value="Rin">
+        <rect class="val-hit ${circuitVerified?'':'locked'}" x="${x+30}" y="${y+34}" width="80" height="20"/>
+        <text x="${x+70}" y="${y+48}" text-anchor="middle" font-size="14" class="val ${circuitVerified?'':'locked'}" data-val-for="Rin">${fmtVal('Rin')}</text>
+      </g>`
+  },
+  Rf:{
+    w:140, h:30,
+    terminals:{ a:{dx:0, dy:15}, b:{dx:140, dy:15} },
+    render:(x,y)=>`
+      <line x1="${x}" y1="${y+15}" x2="${x+34}" y2="${y+15}" stroke="#ffb347" stroke-width="2"/>
+      <path d="M ${x+34} ${y+15} L ${x+40} ${y+3} L ${x+52} ${y+27} L ${x+64} ${y+3} L ${x+76} ${y+27} L ${x+88} ${y+3} L ${x+100} ${y+27} L ${x+106} ${y+15}" stroke="#ffb347" stroke-width="2" fill="none"/>
+      <line x1="${x+106}" y1="${y+15}" x2="${x+140}" y2="${y+15}" stroke="#ffb347" stroke-width="2"/>
+      <text x="${x+70}" y="${y-8}" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2" stroke-linejoin="round">R<tspan font-size="10" dy="3">f</tspan></text>
+      <g class="edit-chip" data-edit-value="Rf">
+        <rect class="val-hit ${circuitVerified?'':'locked'}" x="${x+30}" y="${y+34}" width="80" height="20"/>
+        <text x="${x+70}" y="${y+48}" text-anchor="middle" font-size="14" class="val ${circuitVerified?'':'locked'}" data-val-for="Rf">${fmtVal('Rf')}</text>
+      </g>`
+  },
+  opamp:{
+    w:160, h:120,       /* extended for longer leads */
+    /* Body: x+24 to x+136 horizontally, y+15 to y+105 vertically.
+       Terminals stick out 24px on each side. */
+    terminals:{
+      inv:{dx:0,   dy:35},
+      nonInv:{dx:0,   dy:85},
+      out:{dx:160, dy:60},
+      vcc:{dx:80,  dy:0},
+      vee:{dx:80,  dy:120}
+    },
+    render:(x,y)=>`
+      <!-- Op-amp triangular body -->
+      <path d="M ${x+24} ${y+15} L ${x+24} ${y+105} L ${x+136} ${y+60} Z" fill="rgba(0,255,163,0.08)" stroke="#00ffa3" stroke-width="1.8"/>
+      <!-- Long I/O leads -->
+      <line x1="${x}"     y1="${y+35}"  x2="${x+24}"  y2="${y+35}"  stroke="#00ffa3" stroke-width="1.5"/>
+      <line x1="${x}"     y1="${y+85}"  x2="${x+24}"  y2="${y+85}"  stroke="#00ffa3" stroke-width="1.5"/>
+      <line x1="${x+136}" y1="${y+60}"  x2="${x+160}" y2="${y+60}"  stroke="#00ffa3" stroke-width="1.5"/>
+      <!-- Long power leads -->
+      <line x1="${x+80}"  y1="${y+22}"  x2="${x+80}"  y2="${y}"     stroke="#ff4e6b" stroke-width="1.5"/>
+      <line x1="${x+80}"  y1="${y+98}"  x2="${x+80}"  y2="${y+120}" stroke="#4ab6d6" stroke-width="1.5"/>
+      <!-- Inverting / non-inverting markers (inside body) -->
+      <text x="${x+34}" y="${y+41}" font-size="18" fill="#ff4e6b" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2">−</text>
+      <text x="${x+34}" y="${y+92}" font-size="18" fill="#00ffa3" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2">+</text>
+      <!-- Power pin labels -->
+      <text x="${x+80}" y="${y+34}" font-size="10" fill="#ff4e6b" text-anchor="middle" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2.5">V+</text>
+      <text x="${x+80}" y="${y+92}" font-size="10" fill="#4ab6d6" text-anchor="middle" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2.5">V−</text>
+      <!-- Chip name -->
+      <text x="${x+76}" y="${y+65}" text-anchor="middle" font-size="11" fill="#00ffa3" letter-spacing="1" font-weight="700">μA741</text>`
+  },
+  gnd:{
+    w:30, h:56,         /* added long lead above */
+    terminals:{ top:{dx:15, dy:0} },
+    render:(x,y)=>`
+      <!-- Long top lead -->
+      <line x1="${x+15}" y1="${y}"     x2="${x+15}" y2="${y+30}" stroke="#d8f1e8" stroke-width="2"/>
+      <!-- Ground triangle -->
+      <line x1="${x}"    y1="${y+30}"  x2="${x+30}" y2="${y+30}" stroke="#d8f1e8" stroke-width="2.5"/>
+      <line x1="${x+5}"  y1="${y+36}"  x2="${x+25}" y2="${y+36}" stroke="#d8f1e8" stroke-width="2"/>
+      <line x1="${x+10}" y1="${y+42}"  x2="${x+20}" y2="${y+42}" stroke="#d8f1e8" stroke-width="1.5"/>
+      <text x="${x+15}" y="${y+55}" text-anchor="middle" font-size="12" fill="#ffffff" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2" stroke-linejoin="round">GND</text>`
+  },
+  vcc:{
+    w:30, h:64,         /* extended bottom lead */
+    terminals:{ bottom:{dx:15, dy:64} },
+    render:(x,y)=>`
+      <line x1="${x+5}"  y1="${y+18}" x2="${x+25}" y2="${y+18}" stroke="#ff4e6b" stroke-width="2.5"/>
+      <!-- Long bottom lead -->
+      <line x1="${x+15}" y1="${y+18}" x2="${x+15}" y2="${y+64}" stroke="#ff4e6b" stroke-width="2"/>
+      <text x="${x+15}" y="${y+10}" text-anchor="middle" font-size="13" fill="#ff4e6b" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2" stroke-linejoin="round">+V<tspan font-size="9" dy="2">CC</tspan></text>
+      <!-- Editable value chip — visible after verify -->
+      <g class="edit-chip" data-edit-value="vcc">
+        <rect class="val-hit ${circuitVerified?'':'locked'}" x="${x-6}" y="${y+30}" width="42" height="18"/>
+        <text x="${x+15}" y="${y+44}" text-anchor="middle" font-size="11" class="val ${circuitVerified?'':'locked'}" data-val-for="vcc">${fmtVal('vcc')}</text>
+      </g>`
+  },
+  vee:{
+    w:30, h:64,
+    terminals:{ top:{dx:15, dy:0} },
+    render:(x,y)=>`
+      <!-- Long top lead -->
+      <line x1="${x+15}" y1="${y}"    x2="${x+15}" y2="${y+46}" stroke="#4ab6d6" stroke-width="2"/>
+      <line x1="${x+5}"  y1="${y+46}" x2="${x+25}" y2="${y+46}" stroke="#4ab6d6" stroke-width="2.5"/>
+      <!-- Editable value chip — between lead and label -->
+      <g class="edit-chip" data-edit-value="vee">
+        <rect class="val-hit ${circuitVerified?'':'locked'}" x="${x-6}" y="${y+18}" width="42" height="18"/>
+        <text x="${x+15}" y="${y+32}" text-anchor="middle" font-size="11" class="val ${circuitVerified?'':'locked'}" data-val-for="vee">${fmtVal('vee')}</text>
+      </g>
+      <text x="${x+15}" y="${y+62}" text-anchor="middle" font-size="13" fill="#4ab6d6" font-weight="700" paint-order="stroke" stroke="#0a1014" stroke-width="2" stroke-linejoin="round">−V<tspan font-size="9" dy="2">EE</tspan></text>`
+  },
+  scope:{
+    w:150, h:110,
+    /* probe = signal input on the left, mid-height
+       gnd   = reference ground at the bottom-left */
+    terminals:{
+      probe:{ dx:0,  dy:38 },
+      gnd:  { dx:0,  dy:72 }
+    },
+    render:(x,y)=>{
+      const sw = 118, sh = 68;        // screen inner dimensions
+      const sx = x+16, sy = y+12;     // screen top-left corner
+
+      /* ── Waveform math ──
+         Find what the probe is connected to and compute the UNCLAMPED peak.
+         Generate the sine, then clamp each sample at the supply rails so the
+         flat-top distortion is clearly visible when saturated. */
+      let tracePath = `M ${sx} ${sy+sh/2} L ${sx+sw} ${sy+sh/2}`;
+      let traceColor = 'rgba(255,179,71,0.35)';
+      let probeLabel = 'NO SIGNAL';
+
+      const scopeWire = wires.find(w =>
+        (w.from.type==='scope' && w.from.term==='probe') ||
+        (w.to.type==='scope'   && w.to.term==='probe'));
+
+      if(circuitVerified && scopeWire){
+        const other = scopeWire.from.type === 'scope' ? scopeWire.to : scopeWire.from;
+        const Vi  = values.vin, Rin = values.Rin, Rf = values.Rf;
+        const Av  = -(Rf/Rin);
+        const Vcc_ = values.vcc, Vee_ = values.vee;
+
+        // Unclamped peak at the probed node
+        let peakV = 0;
+        let isSaturated = false;
+
+        if(other.type === 'opamp' && other.term === 'out'){
+          peakV = Av * Vi;                     // true (unclamped) peak
+          isSaturated = (peakV > Vcc_ || peakV < Vee_);
+          probeLabel = 'V_OUT';
+        } else if(other.type === 'vin' && other.term === 'out'){
+          peakV = Vi;
+          probeLabel = 'V_IN';
+        } else if(other.type === 'opamp' && other.term === 'inv'){
+          peakV = 0.02;                        // virtual ground ≈ 0V — show near-flat line
+          probeLabel = 'VIRT_GND';
+        } else {
+          peakV = Av * Vi;
+          isSaturated = (peakV > Vcc_ || peakV < Vee_);
+          probeLabel = 'SIG';
+        }
+
+        /* Scale: the y-axis should show rail headroom so clipping is obvious.
+           Use the LARGER of the peak or the positive rail for the vertical scale. */
+        const displayMax = Math.max(Math.abs(peakV) * 1.05, Math.abs(peakV) > 0.01 ? Math.abs(peakV) * 1.05 : 0.5);
+        const halfH = sh/2 - 5;   // pixels from centerline to screen edge (with margin)
+        const cy = sy + sh/2;
+        const pts = 120;
+        let d = '';
+        for(let i = 0; i <= pts; i++){
+          const t = i / pts;
+          const px = sx + t * sw;
+          const phase = t * Math.PI * 4;           // 2 full cycles
+          let v = Math.sin(phase) * peakV;          // unclamped instantaneous value
+          // Hard-clip at supply rails
+          if(v > Vcc_)  v = Vcc_;
+          if(v < Vee_)  v = Vee_;
+          // Map voltage to y-pixel
+          const py = cy - (v / displayMax) * halfH;
+          d += (i === 0 ? 'M' : 'L') + px.toFixed(1) + ' ' + py.toFixed(1) + ' ';
+        }
+        tracePath = d;
+        traceColor = isSaturated ? '#ff4e6b' : '#ffb347';
+      }
+
+      // Clip-level marker lines when saturated (show exactly where rails are)
+      let clipMarkers = '';
+      if(circuitVerified && scopeWire){
+        const other = scopeWire.from.type==='scope' ? scopeWire.to : scopeWire.from;
+        if(other.type==='opamp' && other.term==='out'){
+          const peakV   = (-(values.Rf/values.Rin)) * values.vin;
+          const isSat   = (peakV > values.vcc || peakV < values.vee);
+          if(isSat){
+            const displayMax = Math.abs(peakV) * 1.05 || 0.5;
+            const halfH  = sh/2 - 5;
+            const cy     = sy + sh/2;
+            const yTop   = cy - (values.vcc / displayMax) * halfH;
+            const yBot   = cy - (values.vee / displayMax) * halfH;
+            clipMarkers = `
+              <line x1="${sx}" y1="${yTop.toFixed(1)}" x2="${sx+sw}" y2="${yTop.toFixed(1)}" stroke="rgba(255,78,107,0.5)" stroke-width="0.5" stroke-dasharray="3 2"/>
+              <line x1="${sx}" y1="${yBot.toFixed(1)}" x2="${sx+sw}" y2="${yBot.toFixed(1)}" stroke="rgba(255,78,107,0.5)" stroke-width="0.5" stroke-dasharray="3 2"/>
+              <text x="${sx+sw-2}" y="${(yTop-2).toFixed(1)}" text-anchor="end" font-size="7" fill="rgba(255,78,107,0.8)" font-family="'JetBrains Mono',monospace">+${values.vcc}V</text>
+              <text x="${sx+sw-2}" y="${(yBot+8).toFixed(1)}" text-anchor="end" font-size="7" fill="rgba(255,78,107,0.8)" font-family="'JetBrains Mono',monospace">${values.vee}V</text>`;
+          }
+        }
+      }
+
+      return `
+      <!-- Oscilloscope outer body -->
+      <rect x="${x}" y="${y}" width="150" height="110" rx="5"
+        fill="rgba(10,16,20,0.92)" stroke="#ffb347" stroke-width="1.8"/>
+      <!-- CRT screen -->
+      <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="2"
+        fill="rgba(0,0,0,0.7)" stroke="#ffb347" stroke-width="0.9"/>
+      <!-- Grid: horizontal centre + quarters -->
+      <line x1="${sx}" y1="${sy+sh/2}"   x2="${sx+sw}" y2="${sy+sh/2}"   stroke="rgba(255,179,71,0.25)" stroke-width="0.5"/>
+      <line x1="${sx}" y1="${sy+sh/4}"   x2="${sx+sw}" y2="${sy+sh/4}"   stroke="rgba(255,179,71,0.12)" stroke-width="0.3"/>
+      <line x1="${sx}" y1="${sy+3*sh/4}" x2="${sx+sw}" y2="${sy+3*sh/4}" stroke="rgba(255,179,71,0.12)" stroke-width="0.3"/>
+      <!-- Grid: vertical -->
+      <line x1="${sx+sw/4}"   y1="${sy}" x2="${sx+sw/4}"   y2="${sy+sh}" stroke="rgba(255,179,71,0.12)" stroke-width="0.3"/>
+      <line x1="${sx+sw/2}"   y1="${sy}" x2="${sx+sw/2}"   y2="${sy+sh}" stroke="rgba(255,179,71,0.22)" stroke-width="0.4"/>
+      <line x1="${sx+3*sw/4}" y1="${sy}" x2="${sx+3*sw/4}" y2="${sy+sh}" stroke="rgba(255,179,71,0.12)" stroke-width="0.3"/>
+      <!-- Clip-level markers (dashed red lines at ±rail) -->
+      ${clipMarkers}
+      <!-- Live waveform trace -->
+      <path d="${tracePath}" fill="none" stroke="${traceColor}" stroke-width="1.6"
+        filter="url(#glow)" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Probe label top-left of screen -->
+      <text x="${sx+3}" y="${sy+9}" font-size="7.5" fill="rgba(255,179,71,0.75)"
+        font-family="'JetBrains Mono',monospace" font-weight="700" letter-spacing=".08em">${probeLabel}</text>
+      <!-- CH1 badge top-right -->
+      <text x="${sx+sw-2}" y="${sy+9}" text-anchor="end" font-size="7.5" fill="rgba(255,179,71,0.55)"
+        font-family="'JetBrains Mono',monospace" font-weight="700">CH1</text>
+      <!-- Bottom label -->
+      <text x="${x+75}" y="${y+106}" text-anchor="middle" font-size="8.5" fill="rgba(255,179,71,0.7)"
+        font-family="'JetBrains Mono',monospace" font-weight="700" letter-spacing=".18em">OSCILLOSCOPE</text>
+      <!-- PROBE terminal lead (left side, upper) -->
+      <line x1="${x}"    y1="${y+38}" x2="${x-18}" y2="${y+38}" stroke="#ffb347" stroke-width="1.8"/>
+      <text x="${x-20}" y="${y+42}" text-anchor="end" font-size="7.5" fill="rgba(255,179,71,0.65)"
+        font-family="'JetBrains Mono',monospace" font-weight="700">CH1</text>
+      <!-- GND terminal lead (left side, lower) -->
+      <line x1="${x}"    y1="${y+72}" x2="${x-18}" y2="${y+72}" stroke="#d8f1e8" stroke-width="1.8"/>
+      <text x="${x-20}" y="${y+76}" text-anchor="end" font-size="7.5" fill="rgba(216,241,232,0.65)"
+        font-family="'JetBrains Mono',monospace" font-weight="700">GND</text>`;
+    }
+  }
+};
+
+/* Terminal classification for power pins (styled differently) */
+const POWER_TERMS = new Set(['vcc:bottom','vee:top','opamp:vcc','opamp:vee']);
+
+/* DOM */
+const svg = document.getElementById('svg');
+const board = document.getElementById('board');
+const placedLayer = document.getElementById('placedLayer');
+const wiresLayer = document.getElementById('wiresLayer');
+const ghostLayer = document.getElementById('ghostLayer');
+const previewLayer = document.getElementById('previewLayer');
+const flowLayer = document.getElementById('flowLayer');
+const modeIndicator = document.getElementById('modeIndicator');
+const wireTool = document.getElementById('wireTool');
+const verifyBtn = document.getElementById('verifyBtn');
+const resetBtn = document.getElementById('resetBtn');
+const statusBanner = document.getElementById('statusBanner');
+const actionHint = document.getElementById('actionHint');
+
+/* Live-editable component values (single source of truth — edited via on-board popover) */
+const values = {
+  Rin: 1.0,   // kΩ
+  Rf:  10.0,  // kΩ
+  vin: 0.5,   // V peak
+  vcc:  12,   // +V_CC supply rail (V)
+  vee: -12    // -V_EE supply rail (V)
+};
+
+/* Slider / editor specs per editable component */
+const VALUE_SPECS = {
+  Rin:{ label:'Input resistor', sym:'R<sub>in</sub>', unit:'kΩ',
+        min:0.1, max:20,  step:0.1,  decimals:1,
+        presets:[0.5, 1, 2.2, 4.7, 10] },
+  Rf: { label:'Feedback resistor', sym:'R<sub>f</sub>', unit:'kΩ',
+        min:0.1, max:100, step:0.1,  decimals:1,
+        presets:[1, 4.7, 10, 47, 100] },
+  vin:{ label:'Input source (peak)', sym:'V<sub>in</sub>', unit:'V',
+        min:0.01, max:5, step:0.01, decimals:2,
+        presets:[0.1, 0.5, 1, 2, 3] },
+  vcc:{ label:'Positive supply rail', sym:'+V<sub>CC</sub>', unit:'V',
+        min:3, max:18, step:0.5, decimals:1,
+        presets:[5, 9, 12, 15, 18] },
+  vee:{ label:'Negative supply rail', sym:'−V<sub>EE</sub>', unit:'V',
+        min:-18, max:-3, step:0.5, decimals:1,
+        presets:[-5, -9, -12, -15, -18] }
+};
+
+function fmtVal(key){
+  const v = values[key];
+  const s = VALUE_SPECS[key];
+  return v.toFixed(s.decimals) + ' ' + s.unit;
+}
+
+/* Console removed from UI — log() is kept as a no-op so existing call sites don't error.
+   All user-facing feedback flows through setBanner() and the inline readouts. */
+function log(_msg, _type){ /* intentionally empty */ }
+log('Lab initialized. Drag all 7 components onto the board, then wire them up.','info');
+
+function setBanner(type, icon, msg, sub){
+  statusBanner.className = 'status-banner '+type;
+  statusBanner.innerHTML = `
+    <div class="icon">${icon}</div>
+    <div class="msg">${msg}${sub ? `<span class="sub">${sub}</span>` : ''}</div>`;
+}
+
+function svgPoint(evt){
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  /* Use the zoomGroup's CTM so that click coordinates match the transformed
+     coordinate space (placed[type] coords + zoomGroup transform). */
+  const zoomGroup = document.getElementById('zoomGroup');
+  const ctm = (zoomGroup ? zoomGroup.getScreenCTM() : svg.getScreenCTM());
+  return pt.matrixTransform(ctm.inverse());
+}
+
+/* ───── Drag from tray → board ───── */
+let draggingType = null;
+document.querySelectorAll('.component[draggable="true"]').forEach(el=>{
+  el.addEventListener('dragstart', e=>{
+    if(el.classList.contains('placed')){
+      e.preventDefault();
+      setBanner('warn','△',
+        `${componentName(el.dataset.type)} is already on the board. Right-click it to delete first if you want to re-place it.`,
+        'COMPONENT ALREADY PLACED');
+      return;
+    }
+    draggingType = el.dataset.type;
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', draggingType);
+  });
+  /* Mousedown on a placed item: also show the same banner since dragstart may
+     not fire reliably across all browsers when pointer-events is none/cursor
+     is not-allowed. This gives the user visible feedback either way. */
+  el.addEventListener('mousedown', e=>{
+    if(el.classList.contains('placed')){
+      setBanner('warn','△',
+        `${componentName(el.dataset.type)} is already on the board. Right-click it to delete first if you want to re-place it.`,
+        'COMPONENT ALREADY PLACED');
+    }
+  });
+  el.addEventListener('dragend', ()=>{
+    el.classList.remove('dragging');
+    draggingType = null;
+    ghostLayer.innerHTML = '';
+  });
+});
+
+board.addEventListener('dragover', e=>{
+  if(!draggingType) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  const p = svgPoint(e);
+  const def = COMPONENTS[draggingType];
+  const x = p.x - def.w/2;
+  const y = p.y - def.h/2;
+  ghostLayer.innerHTML = `<g class="ghost">${def.render(x, y)}</g>`;
+});
+board.addEventListener('dragleave', e=>{
+  if(e.target === board) ghostLayer.innerHTML = '';
+});
+board.addEventListener('drop', e=>{
+  e.preventDefault();
+  if(!draggingType){
+    console.warn('[lab] drop fired but draggingType is null — drag likely never started');
+    ghostLayer.innerHTML = '';
+    return;
+  }
+  if(placed[draggingType]){
+    console.warn('[lab] drop ignored: ' + draggingType + ' is already placed');
+    setBanner('warn','△',
+      `${componentName(draggingType)} is already on the board. Right-click it to remove first.`,
+      'COMPONENT ALREADY PLACED');
+    ghostLayer.innerHTML = '';
+    return;
+  }
+  const p = svgPoint(e);
+  const def = COMPONENTS[draggingType];
+  let x = p.x - def.w/2;
+  let y = p.y - def.h/2;
+  x = Math.max(10, Math.min(1190-def.w, x));
+  y = Math.max(30, Math.min(780-def.h, y));
+  /* If the requested position would overlap an already-placed component,
+     try a few nearby offsets in a spiral pattern to find a clear spot. */
+  const PAD = 8;
+  function overlapsAny(x, y){
+    for(const [otherType, pos] of Object.entries(placed)){
+      if(otherType === draggingType) continue;
+      const od = COMPONENTS[otherType];
+      const overlaps = !(x + def.w + PAD < pos.x ||
+                         x > pos.x + od.w + PAD ||
+                         y + def.h + PAD < pos.y ||
+                         y > pos.y + od.h + PAD);
+      if(overlaps) return true;
+    }
+    return false;
+  }
+  if(overlapsAny(x, y)){
+    /* Spiral search: try increasing radii in 8 cardinal/intercardinal directions. */
+    const STEP = 24;
+    let found = null;
+    outer: for(let r = 1; r <= 12 && !found; r++){
+      for(const [dx, dy] of [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]]){
+        const nx = x + dx * STEP * r;
+        const ny = y + dy * STEP * r;
+        if(nx >= 10 && nx <= 1190-def.w && ny >= 30 && ny <= 780-def.h && !overlapsAny(nx, ny)){
+          found = {x: nx, y: ny};
+          break outer;
+        }
+      }
+    }
+    if(found){ x = found.x; y = found.y; }
+    /* If no free spot found within the search radius, fall through and let
+       the original placement happen anyway — better to place than to silently fail. */
+  }
+  console.log(`[lab] dropping ${draggingType} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
+  placeComponent(draggingType, x, y);
+  ghostLayer.innerHTML = '';
+});
+
+function placeComponent(type, x, y){
+  placed[type] = {x, y};
+  document.querySelector(`.component[data-type="${type}"]`).classList.add('placed');
+  renderAll();
+  log(`${componentName(type)} placed on board.`,'ok');
+  invalidateVerification();
+  const TOTAL = 8;  // 7 core + oscilloscope
+  const placedCount = Object.keys(placed).length;
+  if(placedCount < TOTAL){
+    setBanner('info','›',
+      `${componentName(type)} placed — ${TOTAL-placedCount} component${TOTAL-placedCount>1?'s':''} remaining.`,
+      `STEP 1 OF 4 — ${placedCount}/${TOTAL} COMPONENTS PLACED`);
+  }else{
+    setBanner('info','⚡',
+      'All components placed. Activate the <b>Wire</b> tool and connect all the terminals.',
+      'STEP 2 OF 4 — DRAW WIRES');
+  }
+}
+
+function componentName(t){
+  return ({
+    vin:'V_in source', Rin:'R_in resistor', Rf:'R_f resistor',
+    opamp:'Op-amp μA741', gnd:'Ground',
+    vcc:'+V_CC rail', vee:'−V_EE rail', scope:'Oscilloscope probe'
+  })[t];
+}
+
+function renderAll(){
+  placedLayer.innerHTML = '';
+  Object.entries(placed).forEach(([type, {x,y}])=>{
+    const def = COMPONENTS[type];
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','placed-component');
+    g.setAttribute('data-type', type);
+
+    const pad = 4;
+    /* drag-area covers ONLY the component body, not its labels above or value chip below.
+       This prevents drag-area from intercepting clicks meant for the value chip. */
+    let html = `<rect class="drag-area" data-drag="${type}"
+      x="${x-pad}" y="${y-pad}" width="${def.w+pad*2}" height="${def.h+pad*2}" rx="3"/>`;
+    html += def.render(x, y);
+
+    Object.entries(def.terminals).forEach(([tname, t])=>{
+      const tx = x + t.dx, ty = y + t.dy;
+      const isConnected = wires.some(w =>
+        (w.from.type===type && w.from.term===tname) ||
+        (w.to.type===type && w.to.term===tname));
+      const isStart = wireStart && wireStart.type===type && wireStart.term===tname;
+      const isPower = POWER_TERMS.has(`${type}:${tname}`);
+      html += `<circle class="terminal ${isPower?'power':''} ${isConnected?'connected':''} ${isStart?'wire-start':''}"
+        cx="${tx}" cy="${ty}" r="5"
+        data-type="${type}" data-term="${tname}"/>`;
+    });
+
+    g.innerHTML = html;
+    placedLayer.appendChild(g);
+  });
+
+  wiresLayer.innerHTML = wires.map((w,i)=>{
+    return `<path class="user-wire ${circuitVerified?'energized':''}" data-idx="${i}" d="${routeWireSmart(w, i)}"/>`;
+  }).join('');
+
+  // Refresh flow arrows so they follow components when repositioned
+  if(circuitVerified && typeof renderFlow === 'function'){
+    renderFlow(values.vin, values.Rin, values.Rf);
+  } else {
+    flowLayer.innerHTML = '';
+  }
+}
+
+/* Event delegation */
+svg.addEventListener('click', (e)=>{
+  const terminal = e.target.closest('.terminal');
+  const wire = e.target.closest('.user-wire');
+  if(terminal){
+    e.stopPropagation();
+    handleTerminalClick(terminal);
+    return;
+  }
+  if(wire && wireMode){
+    e.stopPropagation();
+    const idx = +wire.dataset.idx;
+    const removed = wires.splice(idx,1)[0];
+    log(`Wire removed: ${removed.from.type}.${removed.from.term} ⤫ ${removed.to.type}.${removed.to.term}`,'info');
+    renderAll();
+    invalidateVerification();
+    return;
+  }
+  if(wireMode && wireStart){
+    wireStart = null;
+    previewLayer.innerHTML = '';
+    renderAll();
+  }
+});
+
+/* Drag to reposition */
+let dragState = null;
+svg.addEventListener('mousedown', (e)=>{
+  if(e.button !== 0) return;
+  if(e.target.closest('.terminal') || e.target.closest('.user-wire')) return;
+  if(e.target.closest('.edit-chip')) return;    // value chip click — popover will handle
+  if(wireMode) return;
+  const comp = e.target.closest('.placed-component');
+  if(!comp) return;
+  e.preventDefault();
+  const type = comp.dataset.type;
+  const p = svgPoint(e);
+  const pos = placed[type];
+  dragState = { type, offsetX: p.x - pos.x, offsetY: p.y - pos.y, moved: false };
+  comp.classList.add('moving');
+});
+
+window.addEventListener('mousemove', (e)=>{
+  if(!dragState) return;
+  const p = svgPoint(e);
+  const def = COMPONENTS[dragState.type];
+  let nx = p.x - dragState.offsetX;
+  let ny = p.y - dragState.offsetY;
+  nx = Math.max(10, Math.min(1190-def.w, nx));
+  ny = Math.max(30, Math.min(780-def.h, ny));
+  placed[dragState.type] = {x:nx, y:ny};
+  dragState.moved = true;
+  renderAll();
+});
+
+function endDrag(){
+  if(!dragState) return;
+  if(dragState.moved){
+    log(`${componentName(dragState.type)} repositioned.`,'info');
+    invalidateVerification();
+  }
+  dragState = null;
+  document.querySelectorAll('.placed-component.moving').forEach(el=>el.classList.remove('moving'));
+}
+window.addEventListener('mouseup', endDrag);
+
+/* Context menu */
+let contextMenuEl = null;
+function closeContextMenu(){ if(contextMenuEl){ contextMenuEl.remove(); contextMenuEl = null; } }
+function showContextMenu(clientX, clientY, items, headerText){
+  closeContextMenu();
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  let html = headerText ? `<div class="cm-header">${headerText}</div>` : '';
+  items.forEach(it=>{
+    html += `<div class="cm-item ${it.danger?'danger':''}" data-action="${it.action}">
+      <span class="cm-icon">${it.icon||''}</span><span>${it.label}</span>
+      ${it.hint?`<span class="cm-hint">${it.hint}</span>`:''}
+    </div>`;
+  });
+  menu.innerHTML = html;
+  document.body.appendChild(menu);
+  const rect = menu.getBoundingClientRect();
+  let x = clientX, y = clientY;
+  if(x + rect.width  > window.innerWidth)  x = window.innerWidth  - rect.width  - 8;
+  if(y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 8;
+  menu.style.left = x + 'px';
+  menu.style.top  = y + 'px';
+  menu.querySelectorAll('.cm-item').forEach(it=>{
+    it.addEventListener('click', ()=>{
+      const action = it.dataset.action;
+      closeContextMenu();
+      const handler = items.find(i=>i.action===action);
+      if(handler && handler.run) handler.run();
+    });
+  });
+  contextMenuEl = menu;
+}
+svg.addEventListener('contextmenu', (e)=>{
+  const placedComp = e.target.closest('.placed-component');
+  const wire = e.target.closest('.user-wire');
+  if(placedComp){
+    e.preventDefault();
+    const type = placedComp.dataset.type;
+    showContextMenu(e.clientX, e.clientY, [
+      {action:'delete', icon:'✕', label:'Delete component', hint:'DEL', danger:true,
+        run:()=>{
+          delete placed[type];
+          for(let i=wires.length-1;i>=0;i--){
+            if(wires[i].from.type===type || wires[i].to.type===type) wires.splice(i,1);
+          }
+          document.querySelector(`.component[data-type="${type}"]`).classList.remove('placed');
+          renderAll();
+          log(`${componentName(type)} removed.`,'info');
+          invalidateVerification();
+        }},
+      {action:'wires-clear', icon:'⤫', label:'Disconnect wires',
+        run:()=>{
+          const c = wires.length;
+          for(let i=wires.length-1;i>=0;i--){
+            if(wires[i].from.type===type || wires[i].to.type===type) wires.splice(i,1);
+          }
+          const removed = c - wires.length;
+          if(removed>0){ log(`Disconnected ${removed} wire(s).`,'info'); renderAll(); invalidateVerification(); }
+          else log('No wires connected.','warn');
+        }}
+    ], componentName(type).toUpperCase());
+    return;
+  }
+  if(wire){
+    e.preventDefault();
+    const idx = +wire.dataset.idx;
+    const w = wires[idx];
+    showContextMenu(e.clientX, e.clientY, [
+      {action:'delwire', icon:'✕', label:'Delete wire', hint:'DEL', danger:true,
+        run:()=>{
+          wires.splice(idx,1);
+          log(`Wire removed.`,'info');
+          renderAll(); invalidateVerification();
+        }}
+    ], 'WIRE');
+  }
+});
+window.addEventListener('click', closeContextMenu);
+window.addEventListener('scroll', closeContextMenu, true);
+window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeContextMenu(); });
+
+function handleTerminalClick(t){
+  if(!wireMode){
+    log('▸ Activate the Wire tool (left panel) before clicking terminals.','warn'); return;
+  }
+  const type = t.dataset.type;
+  const term = t.dataset.term;
+  const def = COMPONENTS[type];
+  const pos = placed[type];
+  const tdef = def.terminals[term];
+  const tx = pos.x + tdef.dx, ty = pos.y + tdef.dy;
+  if(!wireStart){
+    wireStart = {type, term, x:tx, y:ty};
+    log(`Start: ${type}.${term} — click another terminal.`,'info');
+    renderAll();
+    return;
+  }
+  if(wireStart.type===type && wireStart.term===term){
+    wireStart = null; previewLayer.innerHTML = ''; renderAll(); return;
+  }
+  const exists = wires.some(w =>
+    (w.from.type===wireStart.type && w.from.term===wireStart.term && w.to.type===type && w.to.term===term) ||
+    (w.to.type===wireStart.type && w.to.term===wireStart.term && w.from.type===type && w.from.term===term));
+  if(exists){
+    log('That connection already exists.','warn');
+  }else{
+    wires.push({from:{type:wireStart.type, term:wireStart.term}, to:{type, term}});
+    log(`✓ Wire: ${wireStart.type}.${wireStart.term} → ${type}.${term}`,'ok');
+    setBanner('info','⚡',
+      `Wire added (${wires.length} total). Continue, or press <b>VERIFY</b>.`,
+      'STEP 2 — DRAW WIRES · STEP 3 — VERIFY');
+    invalidateVerification();
+  }
+  wireStart = null;
+  previewLayer.innerHTML = '';
+  renderAll();
+}
+
+wireTool.addEventListener('click', ()=>{
+  wireMode = !wireMode;
+  wireTool.classList.toggle('tool-active', wireMode);
+  modeIndicator.classList.toggle('wire-mode', wireMode);
+  modeIndicator.textContent = wireMode ? '⚡ WIRE MODE' : 'SELECT';
+  if(!wireMode){
+    wireStart = null;
+    previewLayer.innerHTML = '';
+    renderAll();
+  }else{
+    log('Wire tool active.','info');
+    setBanner('info','⚡',
+      'Wire mode active. Click a terminal, then click another to connect them.',
+      'STEP 2 OF 4 — CONNECT TERMINALS');
+  }
+});
+
+board.addEventListener('mousemove', (e)=>{
+  if(!wireMode || !wireStart) return;
+  const p = svgPoint(e);
+  previewLayer.innerHTML = `<path class="preview-wire" d="${routeWire(wireStart.x, wireStart.y, p.x, p.y)}"/>`;
+});
+
+/* ───── WIRE ROUTING ─────
+   Each terminal exits in a natural direction (left/right/up/down).
+   We add a small "lead-out" stub from each terminal in its exit direction,
+   then route an L-path between the two stub ends. This prevents wires from
+   crossing the body of the component they connect to, and reduces overlap. */
+
+const TERMINAL_EXITS = {
+  // direction the wire should leave each terminal: 'L','R','U','D'
+  vin:    { out:'R', gnd:'D' },
+  Rin:    { a:'L',   b:'R'  },
+  Rf:     { a:'L',   b:'R'  },
+  opamp:  { inv:'L', nonInv:'L', out:'R', vcc:'U', vee:'D' },
+  gnd:    { top:'U' },
+  vcc:    { bottom:'D' },
+  vee:    { top:'U' },
+  scope:  { probe:'L', gnd:'L' }
+};
+
+const STUB_LEN = 14;     // base lead-out length from each terminal
+
+function exitOffset(dir, len){
+  switch(dir){
+    case 'L': return {dx:-len, dy:0};
+    case 'R': return {dx:+len, dy:0};
+    case 'U': return {dx:0,    dy:-len};
+    case 'D': return {dx:0,    dy:+len};
+  }
+  return {dx:0, dy:0};
+}
+
+/* For wires sharing a terminal, give each one a unique stub length so they
+   fan out instead of stacking. Returns {a, b} stub lengths for the two ends. */
+function stubLengthsFor(wire, idx){
+  // Count how many wires share each endpoint, and find this wire's rank
+  function rank(end){
+    let n = 0, r = 0;
+    for(let i=0;i<wires.length;i++){
+      const w = wires[i];
+      const sharedFrom = (w.from.type===end.type && w.from.term===end.term);
+      const sharedTo   = (w.to.type===end.type   && w.to.term===end.term);
+      if(sharedFrom || sharedTo){
+        if(i === idx) r = n;
+        n++;
+      }
+    }
+    return {n, r};
+  }
+  const fromRank = rank(wire.from);
+  const toRank   = rank(wire.to);
+  // Each subsequent wire on the same terminal gets a longer stub
+  const aLen = STUB_LEN + fromRank.r * 10;
+  const bLen = STUB_LEN + toRank.r   * 10;
+  return {aLen, bLen};
+}
+
+/* Build an SVG path string. Always orthogonal. Routes:
+     terminal A → stub A → corner(s) → stub B → terminal B
+   The corner placement depends on both exit directions. */
+function routeWireSmart(wire, idx){
+  const a = termPos(wire.from);
+  const b = termPos(wire.to);
+  const dirA = (TERMINAL_EXITS[wire.from.type] || {})[wire.from.term] || 'R';
+  const dirB = (TERMINAL_EXITS[wire.to.type]   || {})[wire.to.term]   || 'L';
+  const {aLen, bLen} = stubLengthsFor(wire, idx);
+  const oa = exitOffset(dirA, aLen);
+  const ob = exitOffset(dirB, bLen);
+
+  // Stub end-points (where the lead-out from each terminal lands)
+  const ax = a.x + oa.dx, ay = a.y + oa.dy;
+  const bx = b.x + ob.dx, by = b.y + ob.dy;
+
+  const isHorizA = (dirA === 'L' || dirA === 'R');
+  const isHorizB = (dirB === 'L' || dirB === 'R');
+
+  let mid;
+  if(isHorizA && isHorizB){
+    // Both stubs horizontal: route H → V → H using midpoint x
+    const mx = (ax + bx) / 2;
+    mid = `L ${mx} ${ay} L ${mx} ${by}`;
+  } else if(!isHorizA && !isHorizB){
+    // Both stubs vertical: route V → H → V using midpoint y
+    const my = (ay + by) / 2;
+    mid = `L ${ax} ${my} L ${bx} ${my}`;
+  } else if(isHorizA && !isHorizB){
+    // A horizontal, B vertical: single L-corner at (bx, ay)
+    mid = `L ${bx} ${ay}`;
+  } else {
+    // A vertical, B horizontal: single L-corner at (ax, by)
+    mid = `L ${ax} ${by}`;
+  }
+
+  return `M ${a.x} ${a.y} L ${ax} ${ay} ${mid} L ${bx} ${by} L ${b.x} ${b.y}`;
+}
+
+function routeWire(x1,y1,x2,y2){
+  /* Backwards-compat: simple 3-segment router used by the live preview path
+     (which doesn't have a wire object yet). */
+  const mx = (x1+x2)/2;
+  return `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`;
+}
+function termPos({type, term}){
+  const p = placed[type];
+  const t = COMPONENTS[type].terminals[term];
+  return {x:p.x+t.dx, y:p.y+t.dy};
+}
+
+/* ───── Verification ───── */
+/* ───── NET CONNECTIVITY ─────
+   Build a graph where every terminal is a node and every wire is an edge.
+   Two terminals are "in the same net" if they are in the same connected component.
+   This handles multi-hop paths like:
+     Rf.a → Rin.b → opamp.inv  (all three are in the same net)
+*/
+function buildNets(){
+  // Collect all terminal IDs that appear in the wire list
+  const parent = {};
+  function id(end){ return `${end.type}.${end.term}`; }
+  function find(a){
+    if(!parent[a]) parent[a] = a;
+    if(parent[a] !== a) parent[a] = find(parent[a]);
+    return parent[a];
+  }
+  function union(a, b){
+    if(!parent[a]) parent[a] = a;
+    if(!parent[b]) parent[b] = b;
+    parent[find(a)] = find(b);
+  }
+  wires.forEach(w => union(id(w.from), id(w.to)));
+  return { sameNet: (a, b) => !!parent[a] && !!parent[b] && find(a) === find(b),
+           inNet:   (a, ...rest) => rest.every(b => {
+             if(!parent[a] || !parent[b]) return false;
+             return find(a) === find(b);
+           }),
+           find };
+}
+
+/* Returns true if terminal specA and specB are in the same net.
+   Specs are 'type.term' strings. */
+function sameNet(a, b){
+  const nets = buildNets();
+  return nets.sameNet(a, b);
+}
+
+/* Returns true if ANY terminal of typeA is in the same net as specB ('type.term'). */
+function connectedToNet(typeA, specB){
+  const nets = buildNets();
+  const def = COMPONENTS[typeA];
+  if(!def) return false;
+  return Object.keys(def.terminals).some(term => nets.sameNet(`${typeA}.${term}`, specB));
+}
+
+/* Returns true if ANY terminal of typeA shares a net with ANY terminal of typeB. */
+function typesConnected(typeA, typeB){
+  const nets = buildNets();
+  const defA = COMPONENTS[typeA], defB = COMPONENTS[typeB];
+  if(!defA || !defB) return false;
+  const termsA = Object.keys(defA.terminals);
+  const termsB = Object.keys(defB.terminals);
+  return termsA.some(ta => termsB.some(tb => nets.sameNet(`${typeA}.${ta}`, `${typeB}.${tb}`)));
+}
+
+function hasConnection(a, b){
+  return wires.some(w =>
+    (matchEnd(w.from, a) && matchEnd(w.to, b)) ||
+    (matchEnd(w.from, b) && matchEnd(w.to, a))
+  );
+}
+function matchEnd(end, spec){
+  const [type, term] = spec.split('.');
+  if(end.type !== type) return false;
+  if(term === undefined) return true;
+  return end.term === term;
+}
+function connects(typeA, typeBspec){
+  return wires.some(w=>{
+    const ends = [w.from, w.to];
+    return ends.some(e=>e.type===typeA) && ends.some(e=>matchEnd(e, typeBspec));
+  });
+}
+
+function verifyCircuit(){
+  const missing = ['vin','Rin','Rf','opamp','gnd','vcc','vee'].filter(t=>!placed[t]);
+  if(missing.length){
+    return {ok:false, banner:`Missing: ${missing.map(componentName).join(', ')}`,
+      sub:'PLACE ALL 7 COMPONENTS',
+      full:`Missing: ${missing.map(componentName).join(', ')}.`};
+  }
+
+  /* ── Use net-aware checks throughout ──
+     connectedToNet(type, 'other.term') = any terminal of `type` is in the same net as `other.term`
+     sameNet('a.term','b.term')         = those two specific terminals share a net            */
+
+  // 1. V_in must be connected to R_in somewhere (input path exists)
+  if(!typesConnected('vin','Rin')){
+    return {ok:false, banner:'V_in is not connected to R_in',
+      sub:'INPUT SIGNAL MUST PASS THROUGH R_IN',
+      full:'✗ V_in is not connected to R_in. The input signal must pass through R_in to reach the inverting terminal.'};
+  }
+
+  // 2. R_in must connect to the inverting (−) input — directly or via another node on the same net
+  if(!connectedToNet('Rin','opamp.inv')){
+    return {ok:false, banner:'R_in must connect to the inverting (−) input',
+      sub:'R_IN FEEDS SIGNAL INTO (−) TERMINAL',
+      full:'✗ R_in is not connected to the op-amp\'s inverting (−) input.'};
+  }
+
+  // 3. R_f must reach the inverting (−) input (same net as opamp.inv)
+  if(!connectedToNet('Rf','opamp.inv')){
+    return {ok:false, banner:'Feedback resistor must reach the inverting terminal',
+      sub:'NO NEGATIVE FEEDBACK WITHOUT THIS CONNECTION',
+      full:'✗ Feedback resistor must connect output to inverting terminal. R_f is not reaching the (−) input — there is no negative feedback.'};
+  }
+
+  // 4. R_f must reach the op-amp output
+  if(!connectedToNet('Rf','opamp.out')){
+    return {ok:false, banner:'Feedback resistor must reach the op-amp output',
+      sub:'R_F IS NOT TOUCHING THE OUTPUT',
+      full:'✗ Feedback resistor must connect output to inverting terminal. R_f is not reaching the op-amp output.'};
+  }
+
+  // 5. Non-inverting (+) must be grounded
+  if(!sameNet('opamp.nonInv','gnd.top')){
+    return {ok:false, banner:'Non-inverting (+) input must be tied to ground',
+      sub:'WITHOUT GROUND, THE VIRTUAL-GROUND COLLAPSES',
+      full:'✗ The non-inverting (+) input must be tied to ground.'};
+  }
+
+  // 6. V_in return (gnd) must be in the same net as ground (warning only)
+  if(!sameNet('vin.gnd','gnd.top')){
+    return {ok:false, isWarn:true, banner:'V_in\'s return is floating',
+      sub:'CONNECT V_IN BOTTOM TO GROUND',
+      full:'△ Source return is floating. Connect V_in\'s bottom terminal to ground.'};
+  }
+
+  // 7. Op-amp power rails
+  if(!sameNet('opamp.vcc','vcc.bottom')){
+    return {ok:false, banner:'Op-amp +V_CC supply pin is not connected',
+      sub:'CONNECT OP-AMP V+ TO THE +V_CC RAIL',
+      full:'✗ Op-amp positive supply pin (V+) must connect to the +V_CC rail. Without power, the op-amp cannot operate.'};
+  }
+  if(!sameNet('opamp.vee','vee.top')){
+    return {ok:false, banner:'Op-amp −V_EE supply pin is not connected',
+      sub:'CONNECT OP-AMP V− TO THE −V_EE RAIL',
+      full:'✗ Op-amp negative supply pin (V−) must connect to the −V_EE rail. Without a negative rail, output cannot swing negative.'};
+  }
+
+  // 8. Sanity: if R_in bridges output to inverting terminal AND there's no separate signal path,
+  //    that means R_in and R_f are swapped — catch that clearly.
+  //    Only flag if R_in is reachable from opamp.out AND from opamp.inv in the SAME net,
+  //    but V_in is NOT reachable from opamp.inv (meaning input signal doesn't reach summing node).
+  const rinReachesOutput = connectedToNet('Rin','opamp.out');
+  const vinReachesInv    = sameNet('vin.out','opamp.inv') || connectedToNet('Rin','opamp.inv');
+  if(rinReachesOutput && !vinReachesInv){
+    return {ok:false, banner:'R_in seems to connect op-amp output to the (−) input',
+      sub:'THAT IS R_F\'S JOB — POSSIBLY SWAPPED',
+      full:'✗ R_in appears to bridge op-amp output to inverting terminal — that is the role of R_f.'};
+  }
+
+  return {ok:true, banner:'CIRCUIT VERIFIED — Negative feedback loop established',
+    sub:'CLICK ANY VALUE ON THE BOARD TO TUNE IT LIVE',
+    full:'CIRCUIT VERIFIED ✓ All connections correct. Op-amp powered from ±V supplies. Negative feedback via R_f.'};
+}
+
+verifyBtn.addEventListener('click', ()=>{
+  log('─── Running circuit verification ───','info');
+  const result = verifyCircuit();
+  log(result.full, result.ok ? 'ok' : (result.isWarn ? 'warn' : 'err'));
+  if(result.ok){
+    circuitVerified = true;
+    if(wireMode){
+      wireMode = false;
+      wireTool.classList.remove('tool-active');
+      modeIndicator.classList.remove('wire-mode');
+      modeIndicator.textContent = 'SELECT';
+      wireStart = null;
+      previewLayer.innerHTML = '';
+    }
+    setBanner('ok','✓', result.banner, result.sub);
+    setHintReady(true);
+    setZoomEnabled(true);
+    setFocusMode(true);          // hide tray, expand circuit
+    setScopeVisible(true);       // reveal right panel with oscilloscope
+    renderAll();
+    runSimulation();
+  }else{
+    circuitVerified = false;
+    setBanner(result.isWarn?'warn':'err', result.isWarn?'△':'✗', result.banner, result.sub);
+    setHintReady(false);
+    setZoomEnabled(false);
+    renderAll();
+  }
+});
+
+/* ── Scope panel visibility ── */
+const scopeToggleBtn   = document.getElementById('scopeToggleBtn');
+const scopeToggleLabel = document.getElementById('scopeToggleLabel');
+
+function setScopeVisible(on){
+  const main = document.querySelector('main');
+  main.classList.toggle('scope-visible', on);
+  board.classList.toggle('show-scope-toggle', true); // always show toggle once verified
+  if(scopeToggleLabel) scopeToggleLabel.textContent = on ? 'Hide' : 'Scope';
+  /* Recalculate the SVG zoom transform — the board width changes when scope
+     slides in/out, so we nudge the scale accordingly. */
+  const zoomGroup = document.getElementById('zoomGroup');
+  if(zoomGroup && document.querySelector('main').classList.contains('focus-mode')){
+    zoomGroup.setAttribute('transform','translate(600 400) scale(1.18) translate(-600 -400)');
+  }
+}
+
+if(scopeToggleBtn){
+  scopeToggleBtn.addEventListener('click', ()=>{
+    const isVisible = document.querySelector('main').classList.contains('scope-visible');
+    setScopeVisible(!isVisible);
+  });
+}
+
+function setFocusMode(on){
+  document.querySelector('main').classList.toggle('focus-mode', on);
+  /* When the tray collapses, the board panel becomes ~22% wider.
+     Apply an SVG transform to the inner zoomGroup so components visually grow.
+     The viewBox is 1200×800; scaling around the center keeps everything inside. */
+  const zoomGroup = document.getElementById('zoomGroup');
+  if(zoomGroup){
+    if(on){
+      // scale up by 1.18 around (400, 280) — the viewBox center
+      zoomGroup.setAttribute('transform', 'translate(600 400) scale(1.18) translate(-600 -400)');
+    } else {
+      zoomGroup.removeAttribute('transform');
+    }
+  }
+}
+
+function setHintReady(ready){
+  if(!actionHint) return;
+  actionHint.classList.toggle('ready', ready);
+  if(ready){
+    actionHint.innerHTML = `
+      <span class="hint-icon" style="background:var(--amber-wash);border-color:var(--amber);color:var(--amber)">✎</span>
+      <span style="color:var(--ink)">Circuit is live. Click any value on the board (<b class="amber-text">10.0 kΩ</b>, <b class="blue-text">0.50 V</b>, etc.) to tune it in real time.</span>
+    `;
+  }else{
+    actionHint.innerHTML = `
+      <span class="hint-icon">✎</span>
+      <span>Values on the board will become editable once the circuit is verified.</span>
+    `;
+  }
+}
+
+function invalidateVerification(){
+  closeValuePopover();
+  if(circuitVerified){
+    circuitVerified = false;
+    setHintReady(false);
+    setZoomEnabled(false);
+    setFocusMode(false);
+    if(typeof closeZoom === 'function' && zoomActive) closeZoom();
+    document.getElementById('gainOut').textContent='—';
+    document.getElementById('voutOut').textContent='—';
+    if(zoomGain) zoomGain.textContent='—';
+    if(zoomVout) zoomVout.textContent='—';
+    document.getElementById('scopeStatus').textContent='IDLE';
+    document.getElementById('scopeStatus').style.color='';
+    document.getElementById('scopeStatus').classList.remove('clipping');
+    if(typeof hideClipTooltip === 'function') hideClipTooltip();
+    document.getElementById('vinTrace').style.opacity = 0;
+    document.getElementById('voutTrace').style.opacity = 0;
+    flowLayer.innerHTML = '';
+  }
+}
+
+function runSimulation(){
+  const Rin = values.Rin;
+  const Rf  = values.Rf;
+  const Vi  = values.vin;
+  const Av  = -(Rf/Rin);
+  let   Vo  = Av*Vi;
+  const Vcc = values.vcc;
+  const Vee = values.vee;
+  let saturated = false;
+  if(Vo > Vcc){ Vo = Vcc; saturated = true; }
+  else if(Vo < Vee){ Vo = Vee; saturated = true; }
+
+  document.getElementById('gainOut').textContent = Av.toFixed(2);
+  document.getElementById('voutOut').textContent = Vo.toFixed(2) + ' V';
+  if(zoomGain) zoomGain.textContent = Av.toFixed(2);
+  if(zoomVout) zoomVout.textContent = Vo.toFixed(2) + ' V';
+
+  document.getElementById('scopeStatus').textContent = saturated ? '⚠ CLIPPING' : '⚡ LIVE';
+  document.getElementById('scopeStatus').style.color = saturated ? 'var(--danger)' : 'var(--accent)';
+  document.getElementById('scopeStatus').classList.toggle('clipping', saturated);
+  /* Stash the rail that was hit so the tooltip can show which side clipped */
+  lastSimState.saturated = saturated;
+  lastSimState.clipRail  = (Av*Vi > Vcc) ? 'top' : (Av*Vi < Vee) ? 'bottom' : null;
+  lastSimState.Vi  = Vi;
+  lastSimState.Av  = Av;
+  lastSimState.Vcc = Vcc;
+  lastSimState.Vee = Vee;
+  lastSimState.Vraw = Av * Vi;
+  lastSimState.Vo  = Vo;
+
+  drawScope(Vi, Av, saturated);
+  renderFlow(Vi, Rin, Rf);
+  /* Re-render placed components so the on-board oscilloscope waveform updates */
+  if(placed.scope) renderAll();
+}
+
+/* ───── CURRENT FLOW ARROWS + LABELS ─────
+   Canonical signal path during +ve half cycle of V_in:
+   V_in.out → R_in → opamp.inv → R_f → opamp.out
+   At the summing junction (opamp.inv), KCL gives i₁ = i_f (in magnitude).
+   We draw arrows along each user-drawn wire that lies on this path,
+   pointing in the canonical flow direction. Plus a current value label
+   on one wire of each branch (input branch & feedback branch). */
+
+const SIGNAL_PATH = [
+  /* directed edges {from, to, branch}; * means any terminal of that component */
+  {from:'vin:out',     to:'Rin:*',       branch:'input'},
+  {from:'Rin:*',       to:'opamp:inv',   branch:'input'},
+  {from:'opamp:inv',   to:'Rf:*',        branch:'feedback'},
+  {from:'Rf:*',        to:'opamp:out',   branch:'feedback'}
+];
+
+function termKey(end){ return `${end.type}:${end.term}`; }
+function matchesPathEnd(endKey, spec){
+  if(spec === endKey) return true;
+  // wildcard: 'Rin:*' matches 'Rin:a' or 'Rin:b'
+  if(spec.endsWith(':*')){
+    const prefix = spec.slice(0, -1); // 'Rin:'
+    return endKey.startsWith(prefix);
+  }
+  return false;
+}
+
+/* Determine if a wire matches a directed signal-path edge.
+   Returns {matched, reversed, branch} or {matched:false}. */
+function classifyWire(wire){
+  const a = termKey(wire.from), b = termKey(wire.to);
+  for(const edge of SIGNAL_PATH){
+    if(matchesPathEnd(a, edge.from) && matchesPathEnd(b, edge.to)){
+      return {matched:true, reversed:false, branch:edge.branch};
+    }
+    if(matchesPathEnd(b, edge.from) && matchesPathEnd(a, edge.to)){
+      return {matched:true, reversed:true,  branch:edge.branch};
+    }
+  }
+  return {matched:false};
+}
+
+/* Parse an SVG path "M x y L x y L x y ..." into an array of points,
+   then sample at parameter t in [0,1]. Returns {x, y, axis, dir}. */
+function parsePathPoints(d){
+  const tokens = d.trim().split(/\s+/);
+  const pts = [];
+  let i = 0;
+  while(i < tokens.length){
+    const cmd = tokens[i];
+    if(cmd === 'M' || cmd === 'L'){
+      const x = parseFloat(tokens[i+1]), y = parseFloat(tokens[i+2]);
+      pts.push({x, y});
+      i += 3;
+    } else {
+      i++;
+    }
+  }
+  return pts;
+}
+function sampleSvgPath(d, t){
+  const pts = parsePathPoints(d);
+  if(pts.length < 2) return {x:0, y:0, axis:'h', dir:1};
+  // segment lengths
+  const segs = [];
+  let total = 0;
+  for(let i=0;i<pts.length-1;i++){
+    const dx = pts[i+1].x - pts[i].x;
+    const dy = pts[i+1].y - pts[i].y;
+    const len = Math.hypot(dx, dy);
+    segs.push({a:pts[i], b:pts[i+1], dx, dy, len});
+    total += len;
+  }
+  if(total === 0) return {x:pts[0].x, y:pts[0].y, axis:'h', dir:1};
+  let target = t * total;
+  for(const s of segs){
+    if(target <= s.len || s === segs[segs.length-1]){
+      const f = s.len > 0 ? target / s.len : 0;
+      const x = s.a.x + s.dx * f;
+      const y = s.a.y + s.dy * f;
+      const axis = Math.abs(s.dx) > Math.abs(s.dy) ? 'h' : 'v';
+      const dir  = axis === 'h' ? Math.sign(s.dx) || 1 : Math.sign(s.dy) || 1;
+      return {x, y, axis, dir};
+    }
+    target -= s.len;
+  }
+  const last = segs[segs.length-1];
+  return {x:last.b.x, y:last.b.y, axis:'h', dir:1};
+}
+
+/* Find the longest straight segment in a path; arrows placed within that
+   segment stay well clear of corners and align cleanly with its axis. */
+function longestSegmentInfo(pathD){
+  const pts = parsePathPoints(pathD);
+  if(pts.length < 2) return null;
+  let best = null;
+  for(let i=0;i<pts.length-1;i++){
+    const dx = pts[i+1].x - pts[i].x;
+    const dy = pts[i+1].y - pts[i].y;
+    const len = Math.hypot(dx, dy);
+    if(!best || len > best.len){
+      best = {a:pts[i], b:pts[i+1], dx, dy, len};
+    }
+  }
+  if(!best || best.len === 0) return null;
+  const axis = Math.abs(best.dx) > Math.abs(best.dy) ? 'h' : 'v';
+  const dir  = axis === 'h' ? Math.sign(best.dx) || 1 : Math.sign(best.dy) || 1;
+  return {best, axis, dir};
+}
+function pointOnSegment(seg, f){
+  return { x: seg.a.x + seg.dx * f, y: seg.a.y + seg.dy * f };
+}
+
+/* Old 4-coord signature kept for callers that still pass start/end (preview). */
+function sampleWirePath(x1, y1, x2, y2, t){
+  const mx = (x1 + x2) / 2;
+  return sampleSvgPath(`M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`, t);
+}
+
+/* SVG triangle arrow — size ~14px wide */
+function arrowSvgAt(x, y, axis, dir){
+  let rotation = 0;
+  if(axis === 'h' && dir < 0) rotation = 180;
+  else if(axis === 'v' && dir > 0) rotation = 90;
+  else if(axis === 'v' && dir < 0) rotation = -90;
+  const points = '0,-7 13,0 0,7';
+  return `<polygon class="flow-arrow" points="${points}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rotation})"/>`;
+}
+
+function fmtCurrent(mA){
+  if(Math.abs(mA) < 0.001) return '0 mA';
+  if(Math.abs(mA) >= 1)    return mA.toFixed(2) + ' mA';
+  return (mA*1000).toFixed(1) + ' µA';
+}
+
+function renderFlow(Vi, Rin, Rf){
+  flowLayer.innerHTML = '';
+  if(!circuitVerified) return;
+
+  const i_peak_mA = Vi / Rin;
+  const labelText = fmtCurrent(i_peak_mA);
+  let html = '';
+
+  const branchWires = { input: [], feedback: [] };
+  wires.forEach((wire, idx) => {
+    const cls = classifyWire(wire);
+    if(cls.matched) branchWires[cls.branch].push({wire, idx, cls});
+  });
+
+  /* Helper: get the rendered path string for a wire, reversed if conceptual flow
+     runs opposite to draw direction. */
+  function pathForFlow(wire, idx, cls){
+    let pathD = routeWireSmart(wire, idx);
+    if(cls.reversed){
+      const pts = parsePathPoints(pathD).reverse();
+      pathD = pts.map((p,i)=>(i===0?'M':'L')+' '+p.x+' '+p.y).join(' ');
+    }
+    return pathD;
+  }
+
+  // Place arrows on every signal-path wire — pinned to the LONGEST straight
+  // segment so they sit firmly on a wire (never near a corner).
+  branchWires.input.concat(branchWires.feedback).forEach(({wire, idx, cls}) => {
+    const pathD = pathForFlow(wire, idx, cls);
+    const info = longestSegmentInfo(pathD);
+    if(!info) return;
+    const {best, axis, dir} = info;
+
+    // Two arrows along the longest segment at 35% and 70%
+    const a1 = pointOnSegment(best, 0.35);
+    const a2 = pointOnSegment(best, 0.70);
+    html += arrowSvgAt(a1.x, a1.y, axis, dir);
+    if(best.len > 50){
+      html += arrowSvgAt(a2.x, a2.y, axis, dir);
+    }
+  });
+
+  // One label per branch — placed perpendicular to the longest segment of the
+  // last (most-open) wire in that branch. Pure white text, no background.
+  ['input', 'feedback'].forEach(branch => {
+    const list = branchWires[branch];
+    if(list.length === 0) return;
+    const {wire, idx, cls} = list[list.length - 1];
+    const pathD = pathForFlow(wire, idx, cls);
+    const info = longestSegmentInfo(pathD);
+    if(!info) return;
+    const {best, axis} = info;
+
+    /* Place label at midpoint of the longest segment, offset perpendicular to it,
+       far enough that the wire doesn't pass behind the text. */
+    const mid = pointOnSegment(best, 0.5);
+    const PERP_OFFSET = 22;     // distance from wire to label baseline
+    let lx, ly;
+    if(axis === 'h'){
+      lx = mid.x;
+      ly = mid.y - PERP_OFFSET;     // place above horizontal wire
+    } else {
+      lx = mid.x + PERP_OFFSET + 6; // place to the right of vertical wire
+      ly = mid.y;
+    }
+
+    const subChar = branch === 'input' ? '1' : 'f';
+    const subUni  = branch === 'input' ? '₁' : 'f';
+    const compactStr = `i${subUni}`;
+    const fullStr    = `i${subUni} = ${labelText}`;
+
+    /* Approximate text widths to size the invisible hit-rect for hover */
+    const compactW = compactStr.length * 9 + 6;
+    const fullW    = fullStr.length    * 7.5 + 6;
+    const labelH   = 18;
+
+    /* Default state: white compact symbol on the wire-side
+       Hover state: full value with µA/mA */
+    const compactAnchor = axis === 'h' ? 'middle' : 'start';
+    const fullAnchor    = axis === 'h' ? 'middle' : 'start';
+
+    html += `<g class="current-label" data-branch="${branch}">
+      <!-- compact symbol (always visible) -->
+      <text class="cl-compact-text" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${compactAnchor}">i<tspan dy="3" font-size="11">${subChar}</tspan></text>
+      <!-- expanded value (hover) -->
+      <text class="cl-full-text" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${fullAnchor}">i<tspan dy="3" font-size="11">${subChar}</tspan><tspan dy="-3"> = ${labelText}</tspan></text>
+      <!-- transparent hover hit-rect spanning the larger (full) label area -->
+      <rect class="cl-hit" x="${(lx - (axis==='h' ? fullW/2 : 4)).toFixed(1)}" y="${(ly - labelH + 2).toFixed(1)}" width="${fullW}" height="${labelH + 4}"/>
+    </g>`;
+  });
+
+  /* ───── VIRTUAL GROUND MARKER ─────
+     Placed at the op-amp's inverting (−) terminal where v⁻ ≈ v⁺ = 0
+     because the op-amp drives its output to keep v⁻ = v⁺ via negative feedback. */
+  if(placed.opamp){
+    const opPos = placed.opamp;
+    const invT  = COMPONENTS.opamp.terminals.inv;
+    const vgX = opPos.x + invT.dx;
+    const vgY = opPos.y + invT.dy;
+    /* Position the "VG" badge a bit above-right of the node so it doesn't sit
+       on the wires meeting there. */
+    const badgeX = vgX - 28;
+    const badgeY = vgY - 28;
+    html += `<g class="vground" data-vground="1">
+      <!-- pulsing halo around the inverting node -->
+      <circle class="vg-halo" cx="${vgX}" cy="${vgY}" r="9"/>
+      <!-- solid dot at the node itself -->
+      <circle class="vg-dot"  cx="${vgX}" cy="${vgY}" r="4.5"/>
+      <!-- short connector from node to badge -->
+      <line class="vg-leader" x1="${vgX}" y1="${vgY}" x2="${badgeX + 16}" y2="${badgeY + 14}"/>
+      <!-- VG badge (always visible) -->
+      <g class="vg-badge" transform="translate(${badgeX} ${badgeY})">
+        <rect class="vg-bg" x="0" y="0" width="36" height="20" rx="3"/>
+        <text class="vg-text" x="18" y="14" text-anchor="middle">VG</text>
+      </g>
+      <!-- Hover hit -->
+      <circle class="vg-hit" cx="${vgX}" cy="${vgY}" r="14"/>
+    </g>`;
+  }
+
+  flowLayer.innerHTML = html;
+}
+
+function drawScope(Vi, Av, saturated){
+  const Vcc = values.vcc;
+  const Vee = values.vee;
+  const maxShow = Math.max(Math.abs(Vi), Math.min(Math.abs(Av*Vi), Math.max(Vcc, -Vee)), 1);
+  const pxPerV = 45 / maxShow;
+  const cy = 62.5;
+  let vinPath = '', voutPath = '';
+  const points = 240;
+  for(let i=0;i<=points;i++){
+    const t = i/points;
+    const x = t*200;
+    const phase = t*Math.PI*4;
+    const vinI = Math.sin(phase)*Vi;
+    let voutI = vinI * Av;
+    if(voutI > Vcc) voutI = Vcc;
+    if(voutI < Vee) voutI = Vee;
+    const yv = cy - vinI*pxPerV;
+    const yo = cy - voutI*pxPerV;
+    vinPath += (i===0?'M ':'L ')+x.toFixed(1)+' '+yv.toFixed(1)+' ';
+    voutPath += (i===0?'M ':'L ')+x.toFixed(1)+' '+yo.toFixed(1)+' ';
+  }
+  const vt = document.getElementById('vinTrace'), ot = document.getElementById('voutTrace');
+  vt.setAttribute('d', vinPath); ot.setAttribute('d', voutPath);
+  vt.style.opacity = 1; ot.style.opacity = 1;
+}
+
+/* ───── INLINE VALUE POPOVER ───── */
+let popoverEl = null;
+let popoverKey = null;
+
+function closeValuePopover(){
+  if(popoverEl){
+    popoverEl.remove();
+    popoverEl = null;
+    popoverKey = null;
+  }
+}
+
+function openValuePopover(key, screenX, screenY){
+  if(!circuitVerified) return;
+  closeValuePopover();
+  const spec = VALUE_SPECS[key];
+  const pop = document.createElement('div');
+  pop.className = 'value-popover';
+  pop.innerHTML = `
+    <div class="vp-header">
+      <div class="vp-label">${spec.label} <span style="opacity:.7">— ${spec.sym}</span></div>
+      <div class="vp-value" id="vpValue">${values[key].toFixed(spec.decimals)} ${spec.unit}</div>
+    </div>
+    <input type="range" class="vp-slider" id="vpSlider"
+      min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${values[key]}" />
+    <div class="vp-range">
+      <span>${spec.min} ${spec.unit}</span>
+      <span>${spec.max} ${spec.unit}</span>
+    </div>
+    <div class="vp-presets">
+      ${spec.presets.map(p=>`<button class="vp-preset" data-preset="${p}">${p} ${spec.unit}</button>`).join('')}
+    </div>
+  `;
+  document.body.appendChild(pop);
+  // Position: below and slightly left of click
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let px = screenX - 20, py = screenY + 14;
+  if(px + w > window.innerWidth  - 10) px = window.innerWidth  - w - 10;
+  if(py + h > window.innerHeight - 10) py = screenY - h - 14;  // flip above
+  if(px < 10) px = 10;
+  pop.style.left = px + 'px';
+  pop.style.top  = py + 'px';
+
+  const slider = pop.querySelector('#vpSlider');
+  const valueDisplay = pop.querySelector('#vpValue');
+  const updateFill = ()=>{
+    const pct = ((+slider.value - spec.min)/(spec.max-spec.min))*100;
+    slider.style.setProperty('--fill', pct+'%');
+  };
+  updateFill();
+
+  slider.addEventListener('input', ()=>{
+    values[key] = parseFloat(slider.value);
+    valueDisplay.textContent = values[key].toFixed(spec.decimals) + ' ' + spec.unit;
+    updateFill();
+    renderAll();                  // re-render so the chip updates
+    runSimulation();
+  });
+
+  pop.querySelectorAll('.vp-preset').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      values[key] = parseFloat(b.dataset.preset);
+      slider.value = values[key];
+      valueDisplay.textContent = values[key].toFixed(spec.decimals) + ' ' + spec.unit;
+      updateFill();
+      renderAll();
+      runSimulation();
+    });
+  });
+
+  popoverEl = pop;
+  popoverKey = key;
+}
+
+/* Delegate clicks on .edit-chip in the SVG */
+svg.addEventListener('click', (e)=>{
+  const chip = e.target.closest('.edit-chip');
+  if(!chip) return;
+  // If user is in wire mode, give a hint instead of silently doing nothing
+  if(wireMode){
+    setBanner('warn','△',
+      'You are in <b>WIRE</b> mode. Click the Wire tool to exit it before adjusting values.',
+      'EXIT WIRE MODE TO EDIT VALUES');
+    return;
+  }
+  if(!circuitVerified){
+    setBanner('warn','△',
+      'Verify the circuit first before adjusting values.',
+      'PRESS VERIFY TO UNLOCK VALUE CHIPS');
+    return;
+  }
+  e.stopPropagation();
+  const key = chip.dataset.editValue;
+  const r = chip.getBoundingClientRect();
+  openValuePopover(key, r.left + r.width/2, r.bottom);
+});
+
+/* Close on outside click, scroll, escape */
+window.addEventListener('click', (e)=>{
+  if(!popoverEl) return;
+  if(popoverEl.contains(e.target)) return;
+  if(e.target.closest('.edit-chip')) return;   // handled above
+  closeValuePopover();
+});
+window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeValuePopover(); });
+window.addEventListener('resize', () => {
+  closeValuePopover();
+  if(zoomActive){
+    captureZoomNaturalSize();
+    applyZoomScale();
+  }
+});
+
+/* ───── VIRTUAL GROUND TOOLTIP ───── */
+let vgTooltipEl = null;
+/* Snapshot of the most recent simulation result — used by the clipping tooltip
+   to explain why the output is rail-locked, with live numbers. */
+const lastSimState = { saturated:false, clipRail:null, Vi:0, Av:0, Vcc:0, Vee:0, Vraw:0, Vo:0 };
+
+function buildVgTooltip(){
+  const Vi  = values.vin;
+  const Rin = values.Rin;
+  const Rf  = values.Rf;
+  const Av  = -(Rf/Rin);
+  const i_mA = Vi / Rin;
+  const iStr = (Math.abs(i_mA) >= 1) ? i_mA.toFixed(2)+' mA' : (i_mA*1000).toFixed(1)+' µA';
+
+  const tip = document.createElement('div');
+  tip.className = 'vg-tooltip';
+  tip.innerHTML = `
+    <h4>⚡ Virtual Ground</h4>
+    <p>The op-amp drives its output until both inputs are at the same voltage. Since the (+) input is grounded:</p>
+    <div class="vg-eq">v⁻ <span class="dim">≈</span> v⁺ <span class="dim">=</span> 0 V</div>
+    <p>So the inverting node sits at <b style="color:var(--accent)">0 V</b> even though it isn't directly connected to ground — that's why it's called <i>virtual</i>.</p>
+    <p>Apply KCL at this node:</p>
+    <div class="vg-eq">i₁ <span class="dim">=</span> i_f <span class="dim">=</span> V<sub>in</sub> / R<sub>in</sub><br><span class="dim" style="color:var(--ink-soft)">    =</span> ${Vi} / ${Rin}k <span class="dim">=</span> ${iStr}</div>
+    <p class="note">Because no current enters the op-amp inputs, the same current flows through R<sub>in</sub> and R<sub>f</sub> — giving V<sub>out</sub> = −(R<sub>f</sub>/R<sub>in</sub>)·V<sub>in</sub> = ${Av.toFixed(2)} × ${Vi} V.</p>
+  `;
+  document.body.appendChild(tip);
+  return tip;
+}
+
+function showVgTooltip(clientX, clientY){
+  hideVgTooltip();
+  vgTooltipEl = buildVgTooltip();
+  const r = vgTooltipEl.getBoundingClientRect();
+  let x = clientX + 16, y = clientY + 12;
+  if(x + r.width  > window.innerWidth  - 10) x = clientX - r.width  - 16;
+  if(y + r.height > window.innerHeight - 10) y = clientY - r.height - 12;
+  if(x < 10) x = 10;
+  if(y < 10) y = 10;
+  vgTooltipEl.style.left = x + 'px';
+  vgTooltipEl.style.top  = y + 'px';
+}
+
+function hideVgTooltip(){
+  if(vgTooltipEl){ vgTooltipEl.remove(); vgTooltipEl = null; }
+}
+
+/* Show on hover/move over the VG marker; hide when leaving */
+svg.addEventListener('mouseover', (e)=>{
+  const vg = e.target.closest('.vground');
+  if(vg) showVgTooltip(e.clientX, e.clientY);
+});
+svg.addEventListener('mousemove', (e)=>{
+  if(!vgTooltipEl) return;
+  const vg = e.target.closest('.vground');
+  if(!vg){ hideVgTooltip(); return; }
+  // Reposition tooltip to follow cursor
+  const r = vgTooltipEl.getBoundingClientRect();
+  let x = e.clientX + 16, y = e.clientY + 12;
+  if(x + r.width  > window.innerWidth  - 10) x = e.clientX - r.width  - 16;
+  if(y + r.height > window.innerHeight - 10) y = e.clientY - r.height - 12;
+  if(x < 10) x = 10;
+  if(y < 10) y = 10;
+  vgTooltipEl.style.left = x + 'px';
+  vgTooltipEl.style.top  = y + 'px';
+});
+svg.addEventListener('mouseout', (e)=>{
+  if(!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.vground')){
+    hideVgTooltip();
+  }
+});
+
+/* ───── CLIPPING TOOLTIP ─────
+   Shown when the user hovers the "⚠ CLIPPING" badge. Explains exactly what's
+   happening: ideal V_out (= A_v · V_in) exceeds the supply rail, so the op-amp
+   output rail-locks at V_CC or V_EE. */
+let clipTooltipEl = null;
+
+function fmtV(v){ return v.toFixed(2) + ' V'; }
+
+function buildClipTooltip(){
+  const s = lastSimState;
+  const railName  = s.clipRail === 'top' ? '+V<sub>CC</sub>' : '−V<sub>EE</sub>';
+  const railValue = s.clipRail === 'top' ? fmtV(s.Vcc) : fmtV(s.Vee);
+  const direction = s.clipRail === 'top' ? 'positive' : 'negative';
+  const overshoot = Math.abs(s.Vraw - (s.clipRail === 'top' ? s.Vcc : s.Vee));
+
+  const tip = document.createElement('div');
+  tip.className = 'clip-tooltip';
+  tip.innerHTML = `
+    <h4>⚠ Output Clipping</h4>
+    <p>The amplifier wants to drive V<sub>out</sub> past the ${direction} supply rail, so the op-amp's output gets <b>rail-locked</b>:</p>
+    <div class="clip-eq">V<sub>out</sub> (ideal) <span class="dim">=</span> A<sub>v</sub> × V<sub>in</sub><br>
+    <span class="dim">    =</span> ${s.Av.toFixed(2)} × ${fmtV(s.Vi)} <span class="dim">=</span> <b>${fmtV(s.Vraw)}</b><br>
+    <span class="dim">but rail =</span> ${railName} <span class="dim">=</span> ${railValue}</div>
+    <p>Output is held at <b style="color:var(--danger)">${fmtV(s.Vo)}</b> — overshoot of <b>${fmtV(overshoot)}</b> is lost as flat-topping on the waveform.</p>
+    <p style="margin-top:10px;color:var(--ink-soft);font-size:11.5px">To restore linear operation, try one of:</p>
+    <ul>
+      <li>Lower <b>V<sub>in</sub></b> so |A<sub>v</sub>·V<sub>in</sub>| stays inside the rails</li>
+      <li>Lower <b>R<sub>f</sub></b> (or raise R<sub>in</sub>) to reduce |A<sub>v</sub>|</li>
+      <li>Raise the <b>${railName}</b> supply rail</li>
+    </ul>
+  `;
+  document.body.appendChild(tip);
+  return tip;
+}
+
+function showClipTooltip(clientX, clientY){
+  hideClipTooltip();
+  if(!lastSimState.saturated) return;
+  clipTooltipEl = buildClipTooltip();
+  positionClipTooltip(clientX, clientY);
+}
+function positionClipTooltip(clientX, clientY){
+  if(!clipTooltipEl) return;
+  const r = clipTooltipEl.getBoundingClientRect();
+  let x = clientX - r.width - 16;       // place to LEFT of cursor (status is at top-right)
+  let y = clientY + 14;
+  if(x < 10) x = clientX + 16;
+  if(y + r.height > window.innerHeight - 10) y = clientY - r.height - 12;
+  if(y < 10) y = 10;
+  clipTooltipEl.style.left = x + 'px';
+  clipTooltipEl.style.top  = y + 'px';
+}
+function hideClipTooltip(){
+  if(clipTooltipEl){ clipTooltipEl.remove(); clipTooltipEl = null; }
+}
+
+const scopeStatusEl = document.getElementById('scopeStatus');
+scopeStatusEl.addEventListener('mouseenter', (e)=>{
+  if(scopeStatusEl.classList.contains('clipping')){
+    showClipTooltip(e.clientX, e.clientY);
+  }
+});
+scopeStatusEl.addEventListener('mousemove', (e)=>{
+  if(clipTooltipEl) positionClipTooltip(e.clientX, e.clientY);
+});
+scopeStatusEl.addEventListener('mouseleave', hideClipTooltip);
+
+/* ───── ZOOM / FULLSCREEN ───── */
+const zoomBtn = document.getElementById('zoomBtn');
+const zoomOverlay = document.getElementById('zoomOverlay');
+const zoomStage = document.getElementById('zoomStage');
+const zoomPan = document.getElementById('zoomPan');
+const zoomContent = document.getElementById('zoomContent');
+const zoomCloseBtn = document.getElementById('zoomCloseBtn');
+const zoomGain = document.getElementById('zoomGain');
+const zoomVout = document.getElementById('zoomVout');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomResetBtn = document.getElementById('zoomResetBtn');
+const zoomLevelEl = document.getElementById('zoomLevel');
+let zoomActive = false;
+let boardOriginalParent = null;
+let boardOriginalNextSibling = null;
+let zoomScale = 1;
+const ZOOM_MIN = 0.6, ZOOM_MAX = 2.5, ZOOM_STEP = 0.15;
+
+let zoomNaturalW = 0, zoomNaturalH = 0;
+
+function applyZoomScale(){
+  if(!zoomPan || !zoomContent) return;
+  /* Set zoom-content to the natural (1×) size, then scale it up.
+     Set zoom-pan to the scaled size so the stage's overflow:auto detects it. */
+  zoomContent.style.width  = zoomNaturalW + 'px';
+  zoomContent.style.height = zoomNaturalH + 'px';
+  zoomContent.style.transform = `scale(${zoomScale})`;
+  zoomPan.style.width  = (zoomNaturalW * zoomScale) + 'px';
+  zoomPan.style.height = (zoomNaturalH * zoomScale) + 'px';
+  zoomLevelEl.textContent = Math.round(zoomScale * 100) + '%';
+  zoomOutBtn.disabled = zoomScale <= ZOOM_MIN + 0.001;
+  zoomInBtn.disabled  = zoomScale >= ZOOM_MAX - 0.001;
+}
+
+function captureZoomNaturalSize(){
+  /* Measure the stage's available content area, minus padding, as the
+     "natural 100%" size. This makes scale=1 fill the stage exactly. */
+  const stageRect = zoomStage.getBoundingClientRect();
+  const cs = getComputedStyle(zoomStage);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop)  + parseFloat(cs.paddingBottom);
+  zoomNaturalW = Math.max(stageRect.width  - padX, 600);
+  zoomNaturalH = Math.max(stageRect.height - padY, 480);
+}
+
+function setZoomEnabled(enabled){
+  if(!zoomBtn) return;
+  zoomBtn.disabled = !enabled;
+  zoomBtn.title = enabled ? 'Open circuit in fullscreen view' : 'Verify the circuit to enable fullscreen view';
+}
+setZoomEnabled(false);
+
+function openZoom(){
+  if(zoomActive) return;
+  if(!circuitVerified){ return; }
+  closeValuePopover();
+  zoomGain.textContent = document.getElementById('gainOut').textContent;
+  zoomVout.textContent = document.getElementById('voutOut').textContent;
+
+  boardOriginalParent = board.parentNode;
+  boardOriginalNextSibling = board.nextSibling;
+  zoomContent.appendChild(board);
+  zoomScale = 1;
+  zoomOverlay.hidden = false;
+  zoomActive = true;
+  document.body.style.overflow = 'hidden';
+  /* Capture natural size and apply scale AFTER the overlay is visible (so
+     the stage has its real layout dimensions). */
+  requestAnimationFrame(()=>{
+    captureZoomNaturalSize();
+    applyZoomScale();
+  });
+}
+function closeZoom(){
+  if(!zoomActive) return;
+  closeValuePopover();
+  if(boardOriginalParent){
+    boardOriginalParent.insertBefore(board, boardOriginalNextSibling);
+  }
+  zoomContent.style.transform = '';
+  zoomContent.style.width = '';
+  zoomContent.style.height = '';
+  zoomPan.style.width = '';
+  zoomPan.style.height = '';
+  zoomOverlay.hidden = true;
+  zoomActive = false;
+  document.body.style.overflow = '';
+}
+
+zoomBtn.addEventListener('click', openZoom);
+zoomCloseBtn.addEventListener('click', closeZoom);
+zoomInBtn.addEventListener('click', ()=>{
+  zoomScale = Math.min(ZOOM_MAX, zoomScale + ZOOM_STEP);
+  applyZoomScale();
+});
+zoomOutBtn.addEventListener('click', ()=>{
+  zoomScale = Math.max(ZOOM_MIN, zoomScale - ZOOM_STEP);
+  applyZoomScale();
+});
+zoomResetBtn.addEventListener('click', ()=>{
+  zoomScale = 1;
+  applyZoomScale();
+});
+window.addEventListener('keydown', (e)=>{
+  if(!zoomActive) return;
+  if(e.key === 'Escape'){ closeZoom(); }
+  else if(e.key === '+' || e.key === '='){
+    zoomScale = Math.min(ZOOM_MAX, zoomScale + ZOOM_STEP);
+    applyZoomScale();
+  }
+  else if(e.key === '-' || e.key === '_'){
+    zoomScale = Math.max(ZOOM_MIN, zoomScale - ZOOM_STEP);
+    applyZoomScale();
+  }
+  else if(e.key === '0'){
+    zoomScale = 1;
+    applyZoomScale();
+  }
+});
+
+/* Tray-restore button — re-shows the component panel even after focus mode kicks in */
+const trayRestoreBtn = document.getElementById('trayRestoreBtn');
+trayRestoreBtn.addEventListener('click', () => setFocusMode(false));
+
+/* Tray-toggle button — manually collapse/expand the components panel anytime */
+const trayToggleBtn = document.getElementById('trayToggleBtn');
+trayToggleBtn.addEventListener('click', () => {
+  const isCollapsed = document.querySelector('main').classList.contains('focus-mode');
+  setFocusMode(!isCollapsed);
+});
+
+/* Reset */
+resetBtn.addEventListener('click', ()=>{
+  closeZoom();
+  setZoomEnabled(false);
+  setFocusMode(false);
+  setScopeVisible(false);
+  board.classList.remove('show-scope-toggle'); // hide the toggle until next verify
+  Object.keys(placed).forEach(k=>delete placed[k]);
+  wires.length = 0;
+  wireStart = null;
+  circuitVerified = false;
+  closeValuePopover();
+  values.Rin = 1.0; values.Rf = 10.0; values.vin = 0.5;
+  values.vcc = 12;  values.vee = -12;
+  if(wireMode){
+    wireMode = false;
+    wireTool.classList.remove('tool-active');
+    modeIndicator.classList.remove('wire-mode');
+    modeIndicator.textContent = 'SELECT';
+  }
+  placedLayer.innerHTML='';
+  wiresLayer.innerHTML='';
+  previewLayer.innerHTML='';
+  ghostLayer.innerHTML='';
+  flowLayer.innerHTML='';
+  document.querySelectorAll('.component').forEach(c=>c.classList.remove('placed'));
+  setHintReady(false);
+  document.getElementById('gainOut').textContent='—';
+  document.getElementById('voutOut').textContent='—';
+  if(zoomGain) zoomGain.textContent='—';
+  if(zoomVout) zoomVout.textContent='—';
+  document.getElementById('scopeStatus').textContent='IDLE';
+  document.getElementById('scopeStatus').style.color='';
+  document.getElementById('scopeStatus').classList.remove('clipping');
+  hideClipTooltip();
+  document.getElementById('vinTrace').style.opacity = 0;
+  document.getElementById('voutTrace').style.opacity = 0;
+  setBanner('info','›',
+    'Drag components onto the board, then click the <b>Wire</b> tool to connect them.',
+    'STEP 1 OF 4 — PLACE COMPONENTS');
+  log('Bench reset.','info');
+});
+</script>
+</body>
+</html>

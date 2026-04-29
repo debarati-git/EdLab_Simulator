@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EdWisely · Virtual Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#080c10;--bg1:#0d1117;--bg2:#13191f;--bg3:#1a2229;
+  --line:#1f2d38;--line2:#2a3d4a;
+  --accent:#00e5ff;--accent-dim:#8ab8d0;--accent-wash:rgba(0,229,255,.08);
+  --green:#00ffa3;--green-wash:rgba(0,255,163,.08);
+  --amber:#ffb347;--amber-wash:rgba(255,179,71,.10);
+  --ink:#cce8f0;--ink-soft:#6b8fa0;--ink-dim:#8ab8d0;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg0)}
+body{
+  font-family:'DM Sans',sans-serif;
+  color:var(--ink);
+  background-image:radial-gradient(circle at 20% 20%, rgba(0,229,255,.03) 0%, transparent 60%),
+                   radial-gradient(circle at 80% 80%, rgba(0,255,163,.02) 0%, transparent 60%);
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:58px;
+  background:var(--bg1);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:10;
+}
+.brand{
+  font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:14px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+}
+.brand span{color:var(--ink-soft);font-weight:400}
+.topbar-tag{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:#8ab8d0;letter-spacing:.18em;text-transform:uppercase;
+}
+
+/* ── HERO ── */
+.hero{
+  max-width:780px;margin:0 auto;padding:60px 32px 48px;
+}
+.hero-eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:.25em;text-transform:uppercase;
+  /* color:var(--accent-dim); */
+  color:8ab8d0;
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.hero-eyebrow::before{
+  content:'';width:20px;height:1px;background:var(--accent-dim);
+}
+.hero-title{
+  font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:800;
+  line-height:1.1;color:var(--ink);margin-bottom:12px;
+}
+.hero-title em{color:var(--accent);font-style:normal}
+.hero-sub{
+  font-size:16px;color:var(--ink-soft);line-height:1.65;
+  max-width:560px;
+}
+
+/* ── DIVIDER ── */
+.divider{
+  max-width:780px;margin:0 auto 32px;padding:0 32px;
+  display:flex;align-items:center;gap:16px;
+}
+.divider-line{flex:1;height:1px;background:var(--line)}
+.divider-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:8ab8d0;letter-spacing:.22em;text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* ── PROBLEM GRID ── */
+.grid{
+  max-width:780px;margin:0 auto;padding:0 32px 80px;
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;
+}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+
+/* ── PROBLEM CARD ── */
+.card{
+  background:var(--bg2);
+  border:1.5px solid var(--line2);
+  border-radius:var(--radius);
+  padding:26px 24px 22px;
+  cursor:pointer;
+  text-decoration:none;
+  color:inherit;
+  display:block;
+  position:relative;
+  overflow:hidden;
+  transition:border-color .2s, box-shadow .2s, transform .18s;
+}
+.card::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg, var(--accent-wash), transparent 60%);
+  opacity:0;transition:opacity .25s;
+  pointer-events:none;
+}
+.card:hover{
+  border-color:var(--accent-dim);
+  transform:translateY(-3px);
+  box-shadow:0 16px 48px rgba(0,0,0,.4), 0 0 0 1px rgba(0,229,255,.12);
+}
+.card:hover::after{opacity:1}
+
+.card-top{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:18px;
+}
+.card-num{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.22em;color:var(--accent);text-transform:uppercase;
+  font-weight:700;
+}
+.card-diff{
+  padding:3px 9px;border-radius:10px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.diff-beginner{
+  background:var(--green-wash);color:var(--green);
+  border:1px solid rgba(0,255,163,.25);
+}
+.diff-intermediate{
+  background:var(--amber-wash);color:var(--amber);
+  border:1px solid rgba(255,179,71,.25);
+}
+
+.card-title{
+  font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;
+  color:var(--ink);line-height:1.25;margin-bottom:10px;
+}
+.card-desc{
+  font-size:14px;color:var(--ink-soft);line-height:1.6;margin-bottom:20px;
+}
+
+.card-pills{
+  display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px;
+}
+.pill{
+  background:var(--bg3);border:1px solid var(--line);
+  border-radius:4px;padding:4px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--amber);font-weight:700;
+}
+.pill span{color:8ab8d0;font-weight:400;margin-right:3px}
+
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:16px;border-top:1px solid var(--line);
+}
+.card-footer-label{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:8ab8d0;letter-spacing:.12em;text-transform:uppercase;
+}
+.card-arrow{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--accent-wash);border:1px solid var(--accent-dim);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent);
+  transition:background .2s, color .2s, transform .18s;
+}
+.card:hover .card-arrow{
+  background:var(--accent);color:var(--bg0);
+  transform:translateX(3px);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent-dim)}
+
+/* ── THEORY BUTTON ── */
+.theory-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;
+  border:1px solid var(--accent-dim);
+  color:var(--accent);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;padding:6px 12px;
+  border-radius:4px;cursor:pointer;
+  transition:all .15s;vertical-align:middle;
+  margin-left:12px;position:relative;top:-2px;
+}
+.theory-btn:hover{background:var(--accent-wash);border-color:var(--accent)}
+.theory-btn svg{flex-shrink:0}
+
+/* ── THEORY MODAL ── */
+.theory-overlay{
+  display:none;
+  position:fixed;inset:0;z-index:200;
+  background:rgba(3,8,16,.82);
+  backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;
+  padding:24px;
+}
+.theory-overlay.open{display:flex}
+
+.theory-modal{
+  background:var(--bg2);
+  border:1px solid var(--line2);
+  border-radius:10px;
+  width:100%;max-width:680px;
+  max-height:88vh;
+  overflow-y:auto;
+  box-shadow:0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(0,229,255,.08);
+  animation:modalIn .2s ease-out;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.tm-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px 16px;
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--bg2);z-index:2;
+}
+.tm-header-left{display:flex;align-items:center;gap:10px}
+.tm-tag{
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-wash);
+  border:1px solid var(--accent-dim);
+  padding:3px 8px;border-radius:3px;
+}
+.tm-title{
+  font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;
+  color:var(--ink);
+}
+.tm-close{
+  width:30px;height:30px;border-radius:50%;
+  background:transparent;border:1px solid var(--line2);
+  color:var(--ink-soft);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:16px;
+}
+.tm-close:hover{background:var(--bg3);color:var(--ink);border-color:var(--line2)}
+
+.tm-body{padding:24px}
+
+/* Circuit diagram */
+.tm-circuit{
+  background:var(--bg3);border:1px solid var(--line);
+  border-radius:6px;padding:20px;margin-bottom:24px;
+  display:flex;justify-content:center;
+}
+
+/* Section blocks */
+.tm-section{margin-bottom:22px}
+.tm-section-title{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.tm-section-title::after{content:'';flex:1;height:1px;background:var(--line)}
+.tm-text{font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:10px}
+.tm-text strong{color:var(--ink)}
+
+/* Formula block */
+.tm-formula{
+  background:var(--bg3);border-left:3px solid var(--accent);
+  border-radius:0 4px 4px 0;
+  padding:14px 18px;margin:12px 0;
+  font-family:'JetBrains Mono',monospace;font-size:15px;
+  color:var(--accent);font-weight:700;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.tm-formula .note{font-size:11px;color:var(--ink-soft);font-weight:400;font-family:'DM Sans',sans-serif}
+
+/* Key points grid */
+.tm-points{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media(max-width:500px){.tm-points{grid-template-columns:1fr}}
+.tm-point{
+  background:var(--bg3);border:1px solid var(--line);border-radius:6px;
+  padding:12px 14px;
+}
+.tm-point-icon{font-size:18px;margin-bottom:6px}
+.tm-point-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--accent-dim);margin-bottom:4px;
+}
+.tm-point-val{font-size:13px;color:var(--ink);line-height:1.5}
+
+/* Example box */
+.tm-example{
+  background:var(--bg3);border:1px solid var(--line2);border-radius:6px;
+  padding:16px 18px;
+}
+.tm-example-title{
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;
+}
+.tm-calc-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--line);
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+}
+.tm-calc-row:last-child{border-bottom:none}
+.tm-calc-row .k{color:var(--ink-soft)}.tm-calc-row .v{color:var(--amber);font-weight:700}
+.tm-calc-row.result .v{color:var(--green);font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">EdWisely <span>/ Virtual Lab</span></div>
+  <div class="topbar-tag">Analog Electronics — μA741 Op-Amp</div>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">Select an experiment</div>
+  <h1 class="hero-title">
+    Inverting Amplifier<br><em>Lab Series</em>
+    <button class="theory-btn" onclick="document.getElementById('theoryModal').classList.add('open')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Theory
+    </button>
+  </h1>
+  <p class="hero-sub">
+    Choose a problem below. You'll read the full problem statement,
+    complete a pre-lab calculation worksheet, then build and verify
+    the circuit in the interactive simulator.
+  </p>
+</div>
+
+<!-- ── THEORY MODAL ── -->
+<div class="theory-overlay" id="theoryModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="theory-modal">
+
+    <div class="tm-header">
+      <div class="tm-header-left">
+        <div class="tm-tag">Theory</div>
+        <div class="tm-title">Inverting Amplifier</div>
+      </div>
+      <button class="tm-close" onclick="document.getElementById('theoryModal').classList.remove('open')">✕</button>
+    </div>
+
+    <div class="tm-body">
+
+      <!-- Circuit diagram -->
+      <div class="tm-circuit">
+        <svg viewBox="0 0 420 220" width="380" height="180" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono, monospace">
+          <!-- V_in source -->
+          <circle cx="40" cy="120" r="22" fill="none" stroke="#4ab6d6" stroke-width="1.6"/>
+          <text x="40" y="125" text-anchor="middle" font-size="11" fill="#4ab6d6">Vin</text>
+          <line x1="40" y1="98" x2="40" y2="60" stroke="#4ab6d6" stroke-width="1.4"/>
+          <line x1="40" y1="142" x2="40" y2="185" stroke="#4ab6d6" stroke-width="1.4"/>
+
+          <!-- R_in -->
+          <line x1="62" y1="60" x2="90" y2="60" stroke="#ffb347" stroke-width="1.6"/>
+          <path d="M90 60 L96 48 L108 72 L120 48 L132 72 L144 48 L150 60 L170 60" stroke="#ffb347" stroke-width="1.6" fill="none"/>
+          <text x="120" y="45" text-anchor="middle" font-size="11" fill="#ffb347">Rin</text>
+
+          <!-- Junction dot -->
+          <circle cx="190" cy="60" r="4" fill="#00ffa3"/>
+
+          <!-- R_f (feedback) -->
+          <line x1="190" y1="60" x2="190" y2="28" stroke="#ffb347" stroke-width="1.4"/>
+          <line x1="190" y1="28" x2="330" y2="28" stroke="#ffb347" stroke-width="1.4"/>
+          <path d="M220 28 L226 16 L238 40 L250 16 L262 40 L274 16 L280 28" stroke="#ffb347" stroke-width="1.6" fill="none"/>
+          <text x="252" y="14" text-anchor="middle" font-size="11" fill="#ffb347">Rf</text>
+          <line x1="330" y1="28" x2="330" y2="115" stroke="#ffb347" stroke-width="1.4"/>
+
+          <!-- Op-amp triangle -->
+          <path d="M200 40 L200 130 L295 85 Z" fill="rgba(0,255,163,0.06)" stroke="#00ffa3" stroke-width="1.6"/>
+          <text x="248" y="90" text-anchor="middle" font-size="10" fill="#00ffa3">μA741</text>
+          <text x="212" y="72" font-size="14" fill="#ff4e6b" font-weight="700">−</text>
+          <text x="212" y="108" font-size="14" fill="#00ffa3" font-weight="700">+</text>
+
+          <!-- Input wire to op-amp inv -->
+          <line x1="170" y1="60" x2="200" y2="60" stroke="#00ffa3" stroke-width="1.4"/>
+          <line x1="190" y1="60" x2="190" y2="65" stroke="#00ffa3" stroke-width="1.4"/>
+
+          <!-- Non-inv to ground -->
+          <line x1="200" y1="108" x2="180" y2="108" stroke="#00ffa3" stroke-width="1.4"/>
+          <line x1="180" y1="108" x2="180" y2="185" stroke="#00ffa3" stroke-width="1.4"/>
+
+          <!-- Output -->
+          <line x1="295" y1="85" x2="330" y2="85" stroke="#00ffa3" stroke-width="1.4"/>
+          <line x1="330" y1="85" x2="370" y2="85" stroke="#00ffa3" stroke-width="1.4"/>
+          <text x="375" y="89" font-size="11" fill="#00ffa3">Vout</text>
+
+          <!-- GND -->
+          <line x1="40" y1="185" x2="180" y2="185" stroke="#d8f1e8" stroke-width="1.4"/>
+          <line x1="110" y1="185" x2="110" y2="198" stroke="#d8f1e8" stroke-width="1.4"/>
+          <line x1="98" y1="198" x2="122" y2="198" stroke="#d8f1e8" stroke-width="2"/>
+          <line x1="103" y1="204" x2="117" y2="204" stroke="#d8f1e8" stroke-width="1.5"/>
+          <line x1="108" y1="210" x2="112" y2="210" stroke="#d8f1e8" stroke-width="1"/>
+          <text x="110" y="218" text-anchor="middle" font-size="10" fill="#d8f1e8">GND</text>
+
+          <!-- VG label -->
+          <rect x="175" y="50" width="26" height="14" rx="2" fill="#00ffa3"/>
+          <text x="188" y="61" text-anchor="middle" font-size="9" fill="#080c10" font-weight="700">VG</text>
+
+          <!-- i arrows -->
+          <text x="128" y="52" font-size="9" fill="rgba(255,179,71,.8)">i₁ →</text>
+          <text x="290" y="22" font-size="9" fill="rgba(255,179,71,.8)">← if</text>
+        </svg>
+      </div>
+
+      <!-- What it does -->
+      <div class="tm-section">
+        <div class="tm-section-title">What it does</div>
+        <p class="tm-text">
+          An <strong>inverting amplifier</strong> scales the input signal by a fixed gain and
+          <strong>flips its polarity</strong>. A positive input produces a negative output.
+          It uses an op-amp with two resistors — R_in sets the input path, R_f provides
+          negative feedback from output back to the inverting (−) input.
+        </p>
+      </div>
+
+      <!-- Gain formula -->
+      <div class="tm-section">
+        <div class="tm-section-title">Voltage Gain</div>
+        <div class="tm-formula">
+          A_v = − R_f / R_in
+          <span class="note">Negative sign = phase inversion</span>
+        </div>
+        <div class="tm-formula">
+          V_out = − (R_f / R_in) × V_in
+          <span class="note">Output voltage equation</span>
+        </div>
+      </div>
+
+      <!-- Virtual ground -->
+      <div class="tm-section">
+        <div class="tm-section-title">Virtual Ground</div>
+        <p class="tm-text">
+          Because the non-inverting (+) input is grounded and the op-amp has negative feedback,
+          it drives its output until <strong>v⁻ = v⁺ = 0 V</strong>. The inverting node is held
+          at 0 V without being directly connected to ground — this is called the
+          <strong>virtual ground</strong>. This means the full input voltage appears across R_in,
+          and KCL gives: <strong>i₁ = i_f = V_in / R_in</strong>.
+        </p>
+      </div>
+
+      <!-- Key points -->
+      <div class="tm-section">
+        <div class="tm-section-title">Key Points</div>
+        <div class="tm-points">
+          <div class="tm-point">
+            <div class="tm-point-icon">🔁</div>
+            <div class="tm-point-label">Phase</div>
+            <div class="tm-point-val">Output is 180° inverted relative to input</div>
+          </div>
+          <div class="tm-point">
+            <div class="tm-point-icon">⚡</div>
+            <div class="tm-point-label">Rail Limit</div>
+            <div class="tm-point-val">V_out cannot exceed the supply rails (±V_CC)</div>
+          </div>
+          <div class="tm-point">
+            <div class="tm-point-icon">🎛️</div>
+            <div class="tm-point-label">Gain control</div>
+            <div class="tm-point-val">Change R_f to change gain — R_in sets input impedance</div>
+          </div>
+          <div class="tm-point">
+            <div class="tm-point-icon">📍</div>
+            <div class="tm-point-label">Virtual Ground</div>
+            <div class="tm-point-val">Inverting (−) terminal stays at ≈ 0 V due to feedback</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Worked example -->
+      <div class="tm-section">
+        <div class="tm-section-title">Worked Example</div>
+        <div class="tm-example">
+          <div class="tm-example-title">📊 Given: V_in = 0.5 V, R_in = 1 kΩ, R_f = 10 kΩ, ±12V supply</div>
+          <div class="tm-calc-row"><span class="k">Gain  A_v = − R_f / R_in</span><span class="v">− 10 / 1 = −10×</span></div>
+          <div class="tm-calc-row"><span class="k">V_out = A_v × V_in</span><span class="v">−10 × 0.5 = −5 V</span></div>
+          <div class="tm-calc-row"><span class="k">Within ±12 V rails?</span><span class="v">Yes — no clipping</span></div>
+          <div class="tm-calc-row result"><span class="k">Output</span><span class="v">−5.00 V ✓</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-label">3 experiments available</div>
+  <div class="divider-line"></div>
+</div>
+
+<div class="grid">
+
+  <a class="card" href="p1.html">
+    <div class="card-top">
+      <div class="card-num">Lab 04 — A</div>
+      <div class="card-diff diff-beginner">Beginner</div>
+    </div>
+    <div class="card-title">Design for a Specified Gain</div>
+    <p class="card-desc">
+      Given R_in and a target voltage gain, calculate the required
+      feedback resistor R_f and predict the output voltage.
+    </p>
+    <div class="card-pills">
+      <div class="pill"><span>V_in</span>0.5 V</div>
+      <div class="pill"><span>R_in</span>1 kΩ</div>
+      <div class="pill"><span>|Av|</span>10×</div>
+      <div class="pill"><span>Find</span>R_f &amp; V_out</div>
+    </div>
+    <div class="card-footer">
+      <div class="card-footer-label">3 steps · ~20 min</div>
+      <div class="card-arrow">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  </a>
+
+  <a class="card" href="p2.html">
+    <div class="card-top">
+      <div class="card-num">Lab 04 — B</div>
+      <div class="card-diff diff-intermediate">Intermediate</div>
+    </div>
+    <div class="card-title">Design for a Specified Output</div>
+    <p class="card-desc">
+      Given V_in and a required V_out, determine the gain needed
+      and select resistor values to achieve the target output.
+    </p>
+    <div class="card-pills">
+      <div class="pill"><span>V_in</span>0.3 V</div>
+      <div class="pill"><span>V_out</span>−2.4 V</div>
+      <div class="pill"><span>R_in</span>2.2 kΩ</div>
+      <div class="pill"><span>Find</span>A_v &amp; R_f</div>
+    </div>
+    <div class="card-footer">
+      <div class="card-footer-label">3 steps · ~25 min</div>
+      <div class="card-arrow">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  </a>
+
+  <a class="card" href="p3.html">
+    <div class="card-top">
+      <div class="card-num">Lab 04 — C</div>
+      <div class="card-diff diff-intermediate">Intermediate</div>
+    </div>
+    <div class="card-title">Design for Gain — with Rail Constraint</div>
+    <p class="card-desc">
+      Calculate R_f for a specified gain, then predict V_out and determine
+      whether the output saturates at the supply rails.
+    </p>
+    <div class="card-pills">
+      <div class="pill"><span>V_in</span>1.0 V</div>
+      <div class="pill"><span>R_in</span>2.2 kΩ</div>
+      <div class="pill"><span>|Av|</span>15×</div>
+      <div class="pill"><span>Check</span>Rail limit</div>
+    </div>
+    <div class="card-footer">
+      <div class="card-footer-label">3 steps · ~25 min</div>
+      <div class="card-arrow">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  </a>
+
+</div>
+
+<script>
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') document.getElementById('theoryModal').classList.remove('open');
+});
+</script>
+</body>
+</html>
